@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GEMiN M1 Signal Bot</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:radial-gradient(circle at top,#182235 0,#0b0f14 45%,#070a0e 100%);
+  color:#fff;
+  min-height:100vh;
+}
+
+.container{
+  max-width:720px;
+  margin:auto;
+  padding:14px;
+}
+
+.header{
+  text-align:center;
+  padding:10px 4px 18px;
+}
+
+.header h1{
+  margin:5px 0;
+  font-size:25px;
+  letter-spacing:.4px;
+}
+
+.header p{
+  margin:5px 0 0;
+  color:#8b949e;
+  font-size:13px;
+}
+
+.card{
+  background:rgba(22,27,34,.94);
+  border-radius:18px;
+  padding:17px;
+  margin:12px 0;
+  border:1px solid #30363d;
+  box-shadow:0 8px 25px rgba(0,0,0,.22);
+}
+
+.card h2,.card h3{
+  margin-top:0;
+}
+
+select,button{
+  width:100%;
+  padding:14px;
+  margin-top:8px;
+  border-radius:12px;
+  border:1px solid #30363d;
+  font-size:16px;
+}
+
+select{
+  background:#0d1117;
+  color:#fff;
+}
+
+button{
+  background:linear-gradient(135deg,#238636,#2ea043);
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:active{
+  transform:scale(.99);
+}
+
+.signal{
+  text-align:center;
+  font-size:48px;
+  font-weight:900;
+  letter-spacing:2px;
+  padding:26px 10px;
+  border-radius:15px;
+  background:#0d1117;
+  margin-top:12px;
+}
+
+.signal.call{
+  color:#22c55e;
+  border:1px solid #166534;
+}
+
+.signal.put{
+  color:#ef4444;
+  border:1px solid #7f1d1d;
+}
+
+.signal.no-trade{
+  color:#facc15;
+}
+
+.signal.wait{
+  color:#f97316;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.stat{
+  background:#0d1117;
+  padding:14px;
+  border-radius:13px;
+  border:1px solid #21262d;
+}
+
+.stat .small{
+  text-transform:uppercase;
+  letter-spacing:.5px;
+}
+
+.value{
+  word-break:break-word;
+  overflow-wrap:anywhere;
+  font-size:23px;
+  font-weight:bold;
+  margin-top:5px;
+}
+
+.reason{
+  padding:9px 0;
+  border-bottom:1px solid #30363d;
+}
+
+.small{
+  color:#8b949e;
+  font-size:13px;
+}
+
+#analyze-status{
+  text-align:center;
+  margin-top:10px;
+  font-weight:bold;
+}
+
+#data-status{
+  text-align:center;
+  margin:8px 0;
+  font-weight:bold;
+}
+
+@media(max-width:480px){
+  .container{padding:10px}
+  .header h1{font-size:22px}
+  .signal{font-size:42px}
+  .value{font-size:20px}
+  .card{padding:14px}
+}
+
+@media(min-width:650px){
+  .container{padding-top:25px}
+}
+body{background:#070b12!important;color:#f5f7fb!important}.container{max-width:900px!important;margin:auto!important;padding:18px!important}.card{background:#101722!important;border:1px solid #263244!important;border-radius:18px!important;padding:18px!important;margin-bottom:16px!important;box-shadow:0 10px 30px #0006!important}.header{background:#101722!important;border:1px solid #263244!important;border-radius:18px!important;padding:20px!important}</style>
+<link rel="stylesheet" href="/premium.css">
+<style id="gemin-professional-ui">
+*{box-sizing:border-box}
+
+html,body{
+ margin:0!important;
+ padding:0!important;
+ background:#080b12!important;
+ color:#f5f7fb!important;
+ font-family:Arial,Helvetica,sans-serif!important;
+}
+
+body{
+ min-height:100vh;
+ background:
+ radial-gradient(circle at 50% -10%,rgba(72,92,140,.22),transparent 38%),
+ linear-gradient(180deg,#090c13 0%,#070910 100%)!important;
+}
+
+.header{
+ padding:18px 16px 14px!important;
+ text-align:left!important;
+ border-bottom:1px solid rgba(255,255,255,.08)!important;
+ background:rgba(8,11,18,.92)!important;
+}
+
+.header h1{
+ margin:0!important;
+ font-size:25px!important;
+ font-weight:800!important;
+ letter-spacing:-.5px!important;
+ line-height:1.15!important;
+}
+
+.header .small{
+ margin-top:5px!important;
+ color:#8e9aab!important;
+ font-size:11px!important;
+}
+
+.card{
+ background:linear-gradient(145deg,#151a24,#0e121a)!important;
+ border:1px solid rgba(255,255,255,.10)!important;
+ border-radius:20px!important;
+ box-shadow:0 12px 35px rgba(0,0,0,.28)!important;
+ padding:16px!important;
+ margin-bottom:13px!important;
+}
+
+label{
+ color:#8d99aa!important;
+ font-size:11px!important;
+ font-weight:700!important;
+ text-transform:uppercase!important;
+ letter-spacing:.6px!important;
+}
+
+select{
+ width:100%!important;
+ height:48px!important;
+ margin-top:7px!important;
+ padding:0 14px!important;
+ border-radius:14px!important;
+ border:1px solid #293447!important;
+ background:#111722!important;
+ color:#fff!important;
+ font-size:15px!important;
+ font-weight:700!important;
+ outline:none!important;
+}
+
+button{
+ border-radius:14px!important;
+ min-height:46px!important;
+ border:1px solid rgba(255,255,255,.12)!important;
+ font-weight:800!important;
+ letter-spacing:.3px!important;
+ transition:.2s!important;
+}
+
+#analyze-btn{
+ width:100%!important;
+ margin-top:12px!important;
+ background:linear-gradient(135deg,#e85b67,#b93454)!important;
+ color:#fff!important;
+ border:0!important;
+ box-shadow:0 8px 24px rgba(211,59,86,.25)!important;
+}
+
+.analysis-complete{
+ color:#22c55e!important;
+ font-weight:800;
+ letter-spacing:.4px;
+ text-shadow:0 0 8px rgba(34,197,94,.45);
+ animation:completePulse 1.4s ease-out;
+}
+
+@keyframes completePulse{
+ 0%{opacity:.45;transform:scale(.98);}
+ 60%{opacity:1;transform:scale(1.02);}
+ 100%{opacity:1;transform:scale(1);}
+}
+
+.analyze-timer{
+ display:block;
+ font-size:12px;
+ font-weight:600;
+ opacity:.75;
+ margin-top:6px;
+ letter-spacing:.3px;
+}
+
+.analyze-spinner{
+ display:inline-block;
+ width:20px;
+ height:20px;
+ border:3px solid rgba(255,255,255,.18);
+ border-top-color:#fff;
+ border-right-color:rgba(255,255,255,.75);
+ border-radius:50%;
+ animation:analyzeSpin .65s cubic-bezier(.4,0,.2,1) infinite;
+ vertical-align:-5px;
+ margin-right:9px;
+ box-sizing:border-box;
+ filter:drop-shadow(0 0 5px rgba(255,255,255,.25));
+}
+
+@keyframes analyzeSpin{
+ to{transform:rotate(360deg);}
+}
+
+#analyze-btn:disabled{
+ cursor:wait!important;
+}
+
+#analyze-btn:active{
+ transform:scale(.98)!important;
+}
+
+button:not(#analyze-btn){
+ background:#151b27!important;
+ color:#dce3ed!important;
+}
+
+/* Main signal/result area */
+.signal,
+.signal-card,
+.result,
+.result-card{
+ border-radius:22px!important;
+ background:linear-gradient(145deg,#171b26,#0d1119)!important;
+ border:1px solid rgba(255,255,255,.12)!important;
+ box-shadow:0 15px 40px rgba(0,0,0,.35)!important;
+}
+
+.signal-value,
+.signal-text,
+#signal,
+[data-signal]{
+ font-size:38px!important;
+ font-weight:900!important;
+ letter-spacing:1px!important;
+ text-align:center!important;
+}
+
+/* Make important values stand out */
+strong{
+ color:#fff!important;
+}
+
+.small{
+ color:#8d99aa!important;
+}
+
+/* Status pills */
+.status,
+.badge,
+.fresh,
+[data-status]{
+ border-radius:999px!important;
+ padding:6px 10px!important;
+ background:#141b27!important;
+ border:1px solid rgba(255,255,255,.08)!important;
+}
+
+/* Indicator cards */
+.indicator,
+.indicator-card,
+.metric,
+.metric-card,
+.stat-card{
+ background:linear-gradient(145deg,#171c27,#10141c)!important;
+ border:1px solid rgba(255,255,255,.09)!important;
+ border-radius:15px!important;
+ padding:13px!important;
+ box-shadow:inset 0 1px rgba(255,255,255,.025)!important;
+}
+
+.indicator-grid,
+.metrics,
+.stats-grid{
+ gap:9px!important;
+}
+
+/* Values */
+.value,
+.metric-value,
+.stat-value{
+ font-weight:850!important;
+ color:#f7f9fc!important;
+}
+
+/* Robot section */
+.robot,
+.robot-card{
+ background:linear-gradient(145deg,#111722,#0b0f16)!important;
+ border:1px solid #263244!important;
+ border-radius:18px!important;
+}
+
+/* History */
+table{
+ width:100%!important;
+ border-collapse:separate!important;
+ border-spacing:0 6px!important;
+}
+
+th{
+ color:#788597!important;
+ font-size:10px!important;
+ text-transform:uppercase!important;
+}
+
+td{
+ background:#121720!important;
+ border-top:1px solid rgba(255,255,255,.05)!important;
+ border-bottom:1px solid rgba(255,255,255,.05)!important;
+ padding:10px 8px!important;
+ font-size:12px!important;
+}
+
+td:first-child{
+ border-radius:10px 0 0 10px!important;
+}
+
+td:last-child{
+ border-radius:0 10px 10px 0!important;
+}
+
+/* Section titles */
+h2,h3{
+ margin-top:4px!important;
+ margin-bottom:12px!important;
+ font-weight:800!important;
+}
+
+hr{
+ border:0!important;
+ border-top:1px solid rgba(255,255,255,.07)!important;
+}
+
+/* Mobile */
+@media(max-width:600px){
+ .header{
+   padding:16px 14px 12px!important;
+ }
+ .header h1{
+   font-size:24px!important;
+ }
+ .card{
+   border-radius:18px!important;
+   padding:14px!important;
+   margin-bottom:11px!important;
+ }
+ .signal-value,
+ .signal-text,
+ #signal,
+ [data-signal]{
+   font-size:34px!important;
+ }
+}
+
+/* Premium glow for active signal */
+.call,
+[data-signal="CALL"]{
+ text-shadow:0 0 18px rgba(53,211,145,.28)!important;
+}
+
+.put,
+[data-signal="PUT"]{
+ text-shadow:0 0 18px rgba(244,91,105,.28)!important;
+}
+
+.wait,
+[data-signal="WAIT"]{
+ text-shadow:0 0 18px rgba(255,190,80,.22)!important;
+}
+</style>
+
+
+<style id="gemin-signal-v2">
+
+/* ===== GEMiN SIGNAL SCREEN V2 ===== */
+
+body{
+  background:
+    radial-gradient(circle at 50% -8%,rgba(108,86,170,.18),transparent 35%),
+    linear-gradient(180deg,#080b12 0%,#070910 100%) !important;
+}
+
+/* compact top spacing */
+.header{
+  padding:16px 14px 11px !important;
+}
+
+.header h1{
+  font-size:24px !important;
+  line-height:1.08 !important;
+}
+
+/* cards */
+.card{
+  background:
+    linear-gradient(145deg,rgba(24,29,40,.98),rgba(12,16,24,.98))
+    !important;
+  border:1px solid rgba(255,255,255,.085) !important;
+  border-radius:19px !important;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,.28),
+    inset 0 1px rgba(255,255,255,.025) !important;
+}
+
+/* robot control */
+.card:first-of-type{
+  padding:13px !important;
+}
+
+.card:first-of-type .card{
+  background:
+    linear-gradient(145deg,#151b27,#0d121b) !important;
+  border-radius:16px !important;
+  padding:13px !important;
+}
+
+.card:first-of-type button{
+  height:44px !important;
+  min-height:44px !important;
+}
+
+/* pair selector */
+select{
+  height:46px !important;
+  border-radius:13px !important;
+  background:#0d131d !important;
+  border-color:#293548 !important;
+}
+
+/* analyze button */
+#analyze-btn{
+  height:47px !important;
+  min-height:47px !important;
+  border-radius:13px !important;
+  margin-top:10px !important;
+  font-size:14px !important;
+  letter-spacing:.4px !important;
+}
+
+/* ===== SIGNAL HERO ===== */
+
+.card:nth-of-type(2){
+  padding:12px !important;
+}
+
+.card:nth-of-type(2) > *{
+  position:relative;
+}
+
+/* signal heading */
+.card:nth-of-type(2) label:first-child{
+  display:block !important;
+  margin:2px 0 8px !important;
+  font-size:10px !important;
+  letter-spacing:1px !important;
+  color:#7d899a !important;
+}
+
+/* large signal area */
+.signal,
+.signal-card,
+.result,
+.result-card{
+  min-height:118px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  align-items:center !important;
+  text-align:center !important;
+  padding:18px !important;
+  border-radius:18px !important;
+  background:
+    radial-gradient(circle at 50% 0%,rgba(90,103,145,.16),transparent 60%),
+    linear-gradient(145deg,#171d28,#0c1119) !important;
+  border:1px solid rgba(255,255,255,.10) !important;
+}
+
+/* signal typography */
+.signal-value,
+.signal-text,
+#signal,
+[data-signal]{
+  font-size:32px !important;
+  line-height:1 !important;
+  font-weight:900 !important;
+  letter-spacing:1.2px !important;
+}
+
+/* ===== DATA META ===== */
+
+.card:nth-of-type(2) .small{
+  font-size:10px !important;
+  color:#748093 !important;
+}
+
+.card:nth-of-type(2) strong{
+  font-size:14px !important;
+}
+
+/* ===== READING GRID ===== */
+
+.indicator-grid,
+.metrics,
+.stats-grid{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:8px !important;
+}
+
+.indicator,
+.indicator-card,
+.metric,
+.metric-card{
+  min-height:55px !important;
+  padding:10px 11px !important;
+  border-radius:13px !important;
+  background:
+    linear-gradient(145deg,#151a24,#0d121a) !important;
+  border:1px solid rgba(255,255,255,.065) !important;
+}
+
+/* indicator labels */
+.indicator label,
+.indicator-card label,
+.metric label,
+.metric-card label{
+  font-size:9px !important;
+  letter-spacing:.65px !important;
+}
+
+/* indicator values */
+.value,
+.metric-value{
+  font-size:16px !important;
+  font-weight:850 !important;
+}
+
+/* ===== ANALYSIS MESSAGE ===== */
+
+.card:nth-of-type(3){
+  background:
+    linear-gradient(145deg,#151b26,#0d121a) !important;
+  border-radius:17px !important;
+  padding:13px !important;
+}
+
+.card:nth-of-type(3) h2,
+.card:nth-of-type(3) h3{
+  font-size:14px !important;
+}
+
+/* ===== STATS ===== */
+
+.stat-card{
+  min-height:65px !important;
+  border-radius:12px !important;
+  padding:10px !important;
+}
+
+.stat-value{
+  font-size:16px !important;
+}
+
+/* ===== HISTORY ===== */
+
+table{
+  font-size:11px !important;
+}
+
+th{
+  font-size:9px !important;
+  letter-spacing:.45px !important;
+}
+
+td{
+  padding:9px 7px !important;
+  font-size:11px !important;
+}
+
+/* ===== MOBILE ===== */
+
+@media(max-width:600px){
+
+  body{
+    overflow-x:hidden !important;
+  }
+
+  .header h1{
+    font-size:23px !important;
+  }
+
+  .card{
+    margin-bottom:10px !important;
+  }
+
+  .signal,
+  .signal-card,
+  .result,
+  .result-card{
+    min-height:112px !important;
+  }
+
+  .signal-value,
+  .signal-text,
+  #signal,
+  [data-signal]{
+    font-size:34px !important;
+  }
+
+  .indicator-grid,
+  .metrics,
+  .stats-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+
+</style>
+
+
+<style id="gemin-market-readings">
+
+.entry-row{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:9px;
+ margin:0 0 14px;
+ text-align:center;
+}
+
+.entry-box{
+ padding:10px 7px;
+ border-radius:13px;
+ background:#0d121a;
+ border:1px solid rgba(255,255,255,.055);
+}
+
+.readings-title{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ margin:5px 1px 9px;
+ color:#dce2eb;
+ font-size:11px;
+ font-weight:800;
+ letter-spacing:.45px;
+}
+
+.readings-title span:last-child{
+ color:#687588;
+ font-size:8px;
+ font-weight:700;
+}
+
+.market-readings{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:8px;
+ margin-bottom:14px;
+}
+
+.reading-card{
+ min-height:64px;
+ display:flex;
+ align-items:center;
+ gap:9px;
+ padding:10px;
+ border-radius:14px;
+ background:
+   linear-gradient(145deg,#171d28,#0d121a);
+ border:1px solid rgba(255,255,255,.065);
+ box-shadow:inset 0 1px rgba(255,255,255,.025);
+}
+
+.reading-icon{
+ width:29px;
+ height:29px;
+ flex:0 0 29px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ border-radius:9px;
+ background:#202735;
+ font-size:14px;
+}
+
+.reading-label{
+ color:#788496;
+ font-size:8px;
+ font-weight:700;
+ letter-spacing:.65px;
+ margin-bottom:4px;
+}
+
+.reading-value{
+ color:#f4f6fa;
+ font-size:12px;
+ font-weight:850;
+ line-height:1.15;
+}
+
+.reading-positive{
+ color:#35d19a!important;
+}
+
+.reading-negative{
+ color:#f05b6b!important;
+}
+
+.legacy-metrics{
+ margin-top:2px!important;
+}
+
+@media(max-width:600px){
+ .market-readings{
+   grid-template-columns:1fr 1fr;
+ }
+ .reading-card{
+   min-height:61px;
+   padding:9px;
+ }
+ .reading-value{
+   font-size:11px;
+ }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>📊 GEMiN M1 Signal Bot</h1>
+<div class="small">M1 Market Signal Engine</div>
+
+<div class="card">
+
+<div class="card">
+<h3>🤖 Robot Control</h3>
+<div id="robot-status" class="small" style="text-align:center;margin-bottom:10px;">
+ROBOT: OFF
+</div>
+<button id="robot-toggle" onclick="toggleRobot()" style="background:#238636;">
+🟢 WASHA ROBOT
+</button>
+</div>
+
+<label>Chagua Pair</label>
+
+<select id="pair">
+<option value="EURUSD">EUR/USD</option>
+<option value="GBPUSD_otc">GBP/USD OTC</option>
+<option value="USDJPY_otc">USD/JPY OTC</option>
+<option value="AUDUSD_otc">AUD/USD OTC</option>
+<option value="BTCUSD_otc">BTC/USD OTC</option>
+</select>
+
+<div style="display:flex;gap:8px;align-items:center;">
+<button onclick="analyze()" id="analyze-btn" style="flex:1;">🔎 ANALYZE</button>
+<div id="accuracy-badge" style="
+min-width:92px;
+padding:10px 8px;
+border-radius:10px;
+text-align:center;
+font-weight:bold;
+font-size:12px;
+background:#161b22;
+border:1px solid #30363d;
+color:#facc15;
+">
+SIGNAL STRENGTH<br><span id="accuracy-value">--%</span>
+</div>
+</div>
+
+<div id="analyze-status" class="small" style="text-align:center;margin-top:10px;">
+READY — Bonyeza ANALYZE
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="small">SIGNAL</div>
+
+<div id="signal" class="signal">
+NO TRADE
+</div>
+<div id="data-status" class="small" style="text-align:center;margin-bottom:15px;">
+DATA: --
+</div>
+
+<div class="entry-row">
+<div class="entry-box">
+<div class="small">ENTRY PRICE</div>
+<div id="entry-price" class="value">--</div>
+</div>
+<div class="entry-box">
+<div class="small">ENTRY CANDLE</div>
+<div id="entry-candle" class="value">--</div>
+</div>
+</div>
+
+<div class="readings-title">
+<span>📊 MARKET READINGS</span>
+<span id="reading-count">8 READINGS</span>
+</div>
+
+<div class="market-readings">
+
+<div class="reading-card">
+<div class="reading-icon">📈</div>
+<div>
+<div class="reading-label">TREND</div>
+<div id="trend-reading" class="reading-value">--</div>
+</div>
+</div>
+
+<div class="reading-card">
+<div class="reading-icon">⚡</div>
+<div>
+<div class="reading-label">MOMENTUM</div>
+<div id="momentum-reading" class="reading-value">--</div>
+</div>
+</div>
+
+<div class="reading-card">
+<div class="reading-icon">〽️</div>
+<div>
+<div class="reading-label">EMA 9 / 21</div>
+<div id="ema-reading" class="reading-value">--</div>
+</div>
+</div>
+
+<div class="reading-card">
+<div class="reading-icon">◉</div>
+<div>
+<div class="reading-label">RSI</div>
+<div id="rsi-reading" class="reading-value">--</div>
+</div>
+</div>
+
+<div class="reading-card">
+<div class="reading-icon">⚡</div>
+<div>
+<div class="reading-label">ADX</div>
+<div id="adx-reading" class="reading-value">--</div>
+</div>
+</div>
+
+<div class="reading-card">
+<div class="reading-icon">〽</div>
+<div>
+<div class="reading-label">ATR</div>
+<div id="atr-reading" class="reading-value">--</div>
+</div>
+</div>
+
+<div class="reading-card">
+<div class="reading-icon">🕯️</div>
+<div>
+<div class="reading-label">CANDLE</div>
+<div id="candle-reading" class="reading-value">--</div>
+</div>
+</div>
+
+<div class="reading-card">
+<div class="reading-icon">🎯</div>
+<div>
+<div class="reading-label">SCORE</div>
+<div id="score-reading" class="reading-value">--</div>
+</div>
+</div>
+
+</div>
+
+<div class="grid legacy-metrics">
+
+<div class="stat">
+<div class="small">Confidence</div>
+<div id="confidence" class="value">--%</div>
+</div>
+
+<div class="stat">
+<div class="small">RSI</div>
+<div id="rsi" class="value">--</div>
+</div>
+
+<div class="stat">
+<div class="small">EMA 9</div>
+<div id="ema9" class="value">--</div>
+</div>
+
+<div class="stat">
+<div class="small">EMA 21</div>
+<div id="ema21" class="value">--</div></div><div class="stat"><div class="small">ADX</div><div id="adx" class="value">--</div></div><div class="stat"><div class="small">ATR</div><div id="atr" class="value">--</div></div><div class="stat"><div class="small">Score</div><div id="score" class="value">--</div></div>
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h3>📌 Analysis</h3>
+
+<div id="reasons">
+Bonyeza ANALYZE kuanza.
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="small">
+⚠️ Hii ni analyzer ya signals. Haifanyi automatic trading.
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+<h3>📊 Trading Stats</h3>
+<div class="grid">
+<div class="stat"><div class="small">Total Trades</div><div id="total-trades" class="value">--</div></div>
+<div class="stat"><div class="small">Wins</div><div id="wins" class="value">--</div></div>
+<div class="stat"><div class="small">Losses</div><div id="losses" class="value">--</div></div>
+<div class="stat"><div class="small">Win Rate</div><div id="win-rate" class="value">--%</div></div>
+<div class="stat"><div class="small">Pending</div><div id="pending" class="value">--</div></div>
+</div>
+</div>
+
+<div class="card">
+<h3>📜 Trade History</h3>
+<div style="overflow-x:auto;">
+<table style="width:100%;border-collapse:collapse;font-size:14px;">
+<thead>
+<tr>
+<th>Signal</th>
+<th>Entry</th>
+<th>Result Price</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody id="history-body">
+<tr><td colspan="4">Loading...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<script>
+
+function updateSignalStrength(confidence){
+    const el = document.getElementById("accuracy-value");
+    const badge = document.getElementById("accuracy-badge");
+
+    if(confidence != null && Number.isFinite(Number(confidence))){
+        const value = Number(confidence);
+
+        el.innerText = value.toFixed(0) + "%";
+
+        badge.style.color =
+            value >= 80 ? "#22c55e" :
+            value >= 60 ? "#facc15" :
+            "#ef4444";
+
+        badge.title = "Signal confidence: " + value.toFixed(0) + "%";
+    } else {
+        el.innerText = "--%";
+        badge.style.color = "#facc15";
+    }
+}
+
+function analyze(){
+
+let select=document.getElementById("pair");
+let symbol=select.value;
+let pair=select.options[select.selectedIndex].text;
+
+const analyzeBtn = document.getElementById("analyze-btn");
+const analyzeStatus = document.getElementById("analyze-status");
+
+analyzeBtn.disabled = true;
+analyzeBtn.innerHTML = '<span class="analyze-spinner"></span> ANALYZING...';
+analyzeBtn.style.opacity = "0.7";
+let analyzeSeconds = 10;
+analyzeStatus.innerHTML =
+    'ANALYZING — Tafuta data mpya...<span class="analyze-timer">⏱ 10s</span>';
+
+const analyzeTimer = setInterval(() => {
+    analyzeSeconds--;
+
+    if (analyzeSeconds >= 0) {
+        analyzeStatus.innerHTML =
+            'ANALYZING — Tafuta data mpya...<span class="analyze-timer">⏱ ' +
+            analyzeSeconds + 's</span>';
+    }
+}, 1000);
+analyzeStatus.style.color = "#facc15";
+
+fetch("/api/live-analyze?symbol="+encodeURIComponent(symbol))
+.then(response => response.json())
+.then(data => {
+
+if(data.error){
+clearInterval(analyzeTimer);
+alert(data.error);
+analyzeStatus.innerText = "ERROR — Analysis haijakamilika";
+analyzeStatus.style.color = "#ef4444";
+return;
+}
+
+const signalEl = document.getElementById("signal");
+signalEl.innerText = data.signal;
+signalEl.className = "signal " + data.signal.toLowerCase().replace(" ", "-");
+
+const statusEl = document.getElementById("data-status");
+statusEl.innerText = "DATA: " + (data.data_status || "--");
+statusEl.style.color = data.data_status === "FRESH" ? "#22c55e" : "#ef4444";
+
+document.getElementById("entry-price").innerText =
+data.close != null ? Number(data.close).toFixed(5) : "--";
+
+document.getElementById("entry-candle").innerText =
+data.last_candle
+    ? new Date(data.last_candle).toISOString().slice(11,16) + " UTC"
+    : "--";
+
+document.getElementById("confidence").innerText=data.confidence+"%";
+updateSignalStrength(data.confidence);
+document.getElementById("rsi").innerText=data.rsi;
+document.getElementById("ema9").innerText=data.ema9;
+document.getElementById("ema21").innerText=data.ema21;
+document.getElementById("adx").innerText=data.adx ?? "--";
+document.getElementById("atr").innerText=data.atr != null ? Number(data.atr).toFixed(6) : "--";
+document.getElementById("score").innerText=data.score ?? "--";
+
+/* ===== PROFESSIONAL MARKET READINGS ===== */
+
+const rsiNum = Number(data.rsi);
+const ema9Num = Number(data.ema9);
+const ema21Num = Number(data.ema21);
+const adxNum = Number(data.adx);
+
+let trend = "--";
+if(Number.isFinite(ema9Num) && Number.isFinite(ema21Num)){
+    trend = ema9Num > ema21Num ? "BULLISH" :
+            ema9Num < ema21Num ? "BEARISH" : "FLAT";
+}
+
+let momentum = "--";
+if(Number.isFinite(rsiNum)){
+    momentum = rsiNum >= 55 ? "BULLISH" :
+               rsiNum <= 45 ? "BEARISH" : "NEUTRAL";
+}
+
+let candle = data.candle_confirmation || data.candle || "--";
+
+document.getElementById("trend-reading").innerText = trend;
+document.getElementById("momentum-reading").innerText = momentum;
+
+document.getElementById("ema-reading").innerText =
+    (data.ema9 != null && data.ema21 != null)
+    ? Number(data.ema9).toFixed(5) + " / " + Number(data.ema21).toFixed(5)
+    : "--";
+
+document.getElementById("rsi-reading").innerText =
+    data.rsi != null ? Number(data.rsi).toFixed(2) : "--";
+
+document.getElementById("adx-reading").innerText =
+    Number.isFinite(adxNum) ? adxNum.toFixed(2) : "--";
+
+document.getElementById("atr-reading").innerText =
+    data.atr != null ? Number(data.atr).toFixed(6) : "--";
+
+document.getElementById("candle-reading").innerText = candle;
+
+document.getElementById("score-reading").innerText =
+    data.score ?? "--";
+
+/* visual state */
+const readingValues = document.querySelectorAll(".reading-value");
+
+readingValues.forEach(el => {
+    el.classList.remove("reading-positive","reading-negative");
+});
+
+if(trend === "BULLISH" || momentum === "BULLISH"){
+    document.getElementById("trend-reading").classList.add("reading-positive");
+}
+
+if(trend === "BEARISH" || momentum === "BEARISH"){
+    document.getElementById("trend-reading").classList.add("reading-negative");
+}
+
+document.getElementById("reasons").innerHTML=
+"<b>"+pair+"</b><br><br>"+
+data.reasons.map(x=>'<div class="reason">• '+x+'</div>').join("");
+
+clearInterval(analyzeTimer);
+analyzeStatus.classList.remove("analysis-complete");
+void analyzeStatus.offsetWidth;
+analyzeStatus.innerText = "✓ ANALYSIS COMPLETE";
+analyzeStatus.classList.add("analysis-complete");
+analyzeStatus.classList.add("analysis-complete");
+analyzeStatus.style.color = "#22c55e";
+
+})
+.catch(error => {
+clearInterval(analyzeTimer);
+alert("Backend haipatikani.");
+analyzeStatus.innerText = "ERROR — Backend haipatikani";
+analyzeStatus.style.color = "#ef4444";
+console.error(error);
+})
+.finally(() => {
+analyzeBtn.disabled = false;
+analyzeBtn.innerText = "🔎 ANALYZE";
+analyzeBtn.style.opacity = "1";
+});
+
+}
+
+function loadHistory(){
+fetch("/api/history")
+.then(response => response.json())
+.then(data => {
+if(data.error){
+console.error(data.error);
+return;
+}
+
+const trades = data.history.filter(x =>
+(x.signal === "CALL" || x.signal === "PUT") &&
+(x.entry_price != null || x.result === "PENDING")
+);
+
+document.getElementById("total-trades").innerText = data.total;
+document.getElementById("wins").innerText = data.wins;
+document.getElementById("losses").innerText = data.losses;
+document.getElementById("win-rate").innerText = data.win_rate + "%";
+document.getElementById("pending").innerText = data.pending;
+
+const body = document.getElementById("history-body");
+
+if(trades.length === 0){
+body.innerHTML =
+'<tr><td colspan="4">Hakuna trades bado.</td></tr>';
+return;
+}
+
+body.innerHTML = trades.slice().reverse().map(x => {
+let result = x.result || "PENDING";
+let style = "";
+
+if(result === "WIN") style = "color:#22c55e;font-weight:bold;";
+if(result === "LOSS") style = "color:#ef4444;font-weight:bold;";
+if(result === "PENDING") style = "color:#facc15;font-weight:bold;";
+
+return '<tr style="border-bottom:1px solid #30363d;">' +
+'<td style="padding:10px;font-weight:bold;">' + x.signal + '</td>' +
+'<td style="padding:10px;">' + (x.entry_price ?? "--") + '</td>' +
+'<td style="padding:10px;">' + (x.result_price ?? "--") + '</td>' +
+'<td style="padding:10px;' + style + '">' + result + '</td>' +
+'</tr>';
+}).join("");
+})
+.catch(error => console.error("History error:", error));
+}
+
+loadHistory();
+
+
+function loadRobotStatus(){
+fetch("/api/robot-status")
+.then(response => response.json())
+.then(data => {
+const status = document.getElementById("robot-status");
+const button = document.getElementById("robot-toggle");
+
+if(data.enabled){
+status.innerText = "ROBOT: ON • ARMED";
+status.style.color = "#22c55e";
+button.innerText = "🔴 ZIMA ROBOT";
+button.style.background = "#dc2626";
+}else{
+status.innerText = "ROBOT: OFF";
+status.style.color = "#facc15";
+button.innerText = "🟢 WASHA ROBOT";
+button.style.background = "#238636";
+}
+})
+.catch(error => console.error("Robot status error:", error));
+}
+
+function toggleRobot(){
+fetch("/api/robot-toggle")
+.then(response => response.json())
+.then(data => {
+loadRobotStatus();
+})
+.catch(error => console.error("Robot toggle error:", error));
+}
+
+loadRobotStatus();
+
+
+
+</script>
+
+</body>
+</html>
+
+<style id="gemin-body-style">
+/* ===== GEMiN PROFESSIONAL BODY ONLY ===== */
+
+html,body{
+    background:#08090e!important;
+    color:#f4f5f7!important;
+}
+
+body{
+    min-height:100vh!important;
+    background:
+      radial-gradient(circle at 50% 0%,rgba(75,62,110,.20),transparent 30%),
+      linear-gradient(180deg,#090a10 0%,#05060a 100%)!important;
+}
+
+/* Main page container */
+body > *{
+    max-width:100%!important;
+}
+
+/* Header / app identity */
+.header{
+    background:rgba(8,9,14,.94)!important;
+    border-bottom:1px solid rgba(255,255,255,.07)!important;
+    padding:18px 16px 15px!important;
+}
+
+/* Premium cards */
+.card{
+    background:
+      linear-gradient(145deg,#151821,#0d1017)!important;
+    border:1px solid rgba(255,255,255,.075)!important;
+    border-radius:20px!important;
+    box-shadow:
+      0 14px 35px rgba(0,0,0,.35),
+      inset 0 1px rgba(255,255,255,.025)!important;
+}
+
+/* Robot section */
+.card:first-of-type{
+    background:
+      linear-gradient(145deg,#151a24,#0d1118)!important;
+}
+
+/* Pair selector */
+select{
+    background:#0b0f16!important;
+    border:1px solid #2b3444!important;
+    color:#f5f6f8!important;
+}
+
+/* Analyze button */
+#analyze-btn{
+    background:linear-gradient(135deg,#ef5a6b,#c83d58)!important;
+    box-shadow:
+      0 8px 22px rgba(224,66,91,.24)!important;
+}
+
+/* Signal container */
+.signal,
+.signal-card,
+.result,
+.result-card{
+    background:
+      radial-gradient(circle at 50% 0%,rgba(90,95,130,.13),transparent 58%),
+      linear-gradient(145deg,#151a24,#0b0e15)!important;
+    border:1px solid rgba(255,255,255,.09)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.025)!important;
+}
+
+/* Entry boxes */
+.entry-box{
+    background:#0b0f16!important;
+    border:1px solid rgba(255,255,255,.055)!important;
+}
+
+/* Market readings container */
+.market-readings{
+    gap:9px!important;
+}
+
+/* Reading cards stay exactly the same data */
+.reading-card{
+    background:
+      linear-gradient(145deg,#161b25,#0c1017)!important;
+    border:1px solid rgba(255,255,255,.065)!important;
+    box-shadow:
+      0 6px 18px rgba(0,0,0,.18),
+      inset 0 1px rgba(255,255,255,.025)!important;
+}
+
+/* Analysis / Stats / History */
+.card h3{
+    color:#f3f5f8!important;
+}
+
+.stat-card,
+.metric-card{
+    background:#0c1017!important;
+}
+
+/* Warning/disclaimer */
+.card:has(.warning),
+.warning{
+    background:#11151d!important;
+}
+
+/* Cleaner mobile spacing */
+@media(max-width:600px){
+    body{
+        padding-bottom:12px!important;
+    }
+
+    .header{
+        padding:17px 15px 13px!important;
+    }
+
+    .card{
+        border-radius:19px!important;
+        margin-bottom:11px!important;
+    }
+}
+</style>
+

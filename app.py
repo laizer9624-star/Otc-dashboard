@@ -71,7 +71,7 @@ def load_users():
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
 
-    cur.execute("SELECT username,password,status,plan,price,expiry FROM users")
+    cur.execute("SELECT username,password,status,plan,price,expiry,transaction_id,payer_name FROM users")
     rows = cur.fetchall()
 
     conn.close()
@@ -83,7 +83,9 @@ def load_users():
             "status": r[2],
             "plan": r[3],
             "price": r[4],
-            "expiry": r[5]
+            "expiry": r[5],
+            "transaction_id": r[6],
+            "payer_name": r[7]
         }
         for r in rows
     ]
@@ -96,15 +98,17 @@ def save_users(users):
     for u in users:
         cur.execute("""
         INSERT OR REPLACE INTO users
-        (username,password,status,plan,price,expiry)
-        VALUES (?,?,?,?,?,?)
+        (username,password,status,plan,price,expiry,transaction_id,payer_name)
+        VALUES (?,?,?,?,?,?,?,?)
         """, (
             u.get("username"),
             u.get("password"),
             u.get("status"),
             u.get("plan"),
             u.get("price"),
-            u.get("expiry")
+            u.get("expiry"),
+            u.get("transaction_id"),
+            u.get("payer_name")
         ))
 
     conn.commit()

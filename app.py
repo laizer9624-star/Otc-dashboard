@@ -757,11 +757,7 @@ class Handler(SimpleHTTPRequestHandler):
                 <td>{u.get("plan")}</td>
                 <td>{u.get("expiry")}</td>
                 <td>
-                <a href="/admin/activate?username={u.get("username")}">
-                <button style="padding:6px;background:#16a34a;color:white;border:0;border-radius:5px;">
-                ACTIVATE
-                </button>
-                </a>
+                {"<a href='/admin/activate?username=" + u.get("username") + "'><button style='padding:6px;background:#16a34a;color:white;border:0;border-radius:5px;'>ACTIVATE</button></a>" if u.get("status") == "PAYMENT_SENT" else "ACTIVE"}
                 </td>
                 </tr>
                 """

@@ -748,19 +748,31 @@ class Handler(SimpleHTTPRequestHandler):
         if parsed.path == "/admin":
             users = load_users()
 
-            rows = ""
+            pending_rows = ""
+            active_rows = ""
+
             for u in users:
-                rows += f"""
+                action = (
+                    "<a href='/admin/activate?username=" + u.get("username") +
+                    "'><button style='padding:6px;background:#16a34a;color:white;border:0;border-radius:5px;'>ACTIVATE</button></a>"
+                    if u.get("status") == "PAYMENT_SENT"
+                    else "ACTIVE"
+                )
+
+                row = f"""
                 <tr>
                 <td>{u.get("username")}</td>
                 <td>{u.get("status")}</td>
                 <td>{u.get("plan")}</td>
                 <td>{u.get("expiry")}</td>
-                <td>
-                {"<a href='/admin/activate?username=" + u.get("username") + "'><button style='padding:6px;background:#16a34a;color:white;border:0;border-radius:5px;'>ACTIVATE</button></a>" if u.get("status") == "PAYMENT_SENT" else "ACTIVE"}
-                </td>
+                <td>{action}</td>
                 </tr>
                 """
+
+                if u.get("status") == "PAYMENT_SENT":
+                    pending_rows += row
+                else:
+                    active_rows += row
 
             html = f"""
             <html>
@@ -774,6 +786,15 @@ class Handler(SimpleHTTPRequestHandler):
             </head>
             <body>
             <h2>GEMiN ADMIN PANEL</h2>
+
+            <div style="margin-bottom:15px;">
+            Pending Payments:
+            {sum(1 for u in users if u.get("status") == "PAYMENT_SENT")}
+            |
+            Active Users:
+            {sum(1 for u in users if u.get("status") == "ACTIVE")}
+            </div>
+
             <table>
             <tr>
             <th>User</th>
@@ -782,7 +803,7 @@ class Handler(SimpleHTTPRequestHandler):
             <th>Expiry</th>
             <th>Action</th>
             </tr>
-            {rows}
+            {pending_rows}{active_rows}
             </table>
             </body>
             </html>

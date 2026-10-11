@@ -1,5 +1,6 @@
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import json
+import sqlite3
 import os
 import urllib.parse
 import urllib.request
@@ -42,16 +43,72 @@ def login_user(username, password):
 
 
 
+DB_FILE = "gemin.db"
+
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        username TEXT PRIMARY KEY,
+        password TEXT,
+        status TEXT,
+        plan TEXT,
+        price INTEGER,
+        expiry TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+init_db()
+
 USERS_FILE = Path("users.json")
 
 def load_users():
-    try:
-        return json.loads(USERS_FILE.read_text())
-    except Exception:
-        return []
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+
+    cur.execute("SELECT username,password,status,plan,price,expiry FROM users")
+    rows = cur.fetchall()
+
+    conn.close()
+
+    return [
+        {
+            "username": r[0],
+            "password": r[1],
+            "status": r[2],
+            "plan": r[3],
+            "price": r[4],
+            "expiry": r[5]
+        }
+        for r in rows
+    ]
+
 
 def save_users(users):
-    USERS_FILE.write_text(json.dumps(users, indent=2))
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+
+    for u in users:
+        cur.execute("""
+        INSERT OR REPLACE INTO users
+        (username,password,status,plan,price,expiry)
+        VALUES (?,?,?,?,?,?)
+        """, (
+            u.get("username"),
+            u.get("password"),
+            u.get("status"),
+            u.get("plan"),
+            u.get("price"),
+            u.get("expiry")
+        ))
+
+    conn.commit()
+    conn.close()
 
 def check_premium(user):
     if user.get("status") != "ACTIVE":

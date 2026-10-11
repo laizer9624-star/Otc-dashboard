@@ -1424,15 +1424,22 @@ async function loginAccount(){
     let data = await res.json();
 
     if(data.ok){
-        localStorage.setItem("gemin_user", username);
 
         if(!data.premium){
+            localStorage.removeItem("gemin_user");
+
+            let dashboard = document.getElementById("dashboard-area");
+            if(dashboard){
+                dashboard.style.display = "none";
+            }
+
             document.getElementById("login-msg").innerText =
             "Account yako bado haija-activate. Tafadhali lipa na omba activation.";
             return;
         }
 
         if(data.premium){
+            localStorage.setItem("gemin_user", username);
             document.getElementById("premium-box").style.display = "none";
         }
 

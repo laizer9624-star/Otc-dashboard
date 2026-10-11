@@ -65,6 +65,25 @@ def init_db():
 
 init_db()
 
+def migrate_db():
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+
+    try:
+        cur.execute("ALTER TABLE users ADD COLUMN transaction_id TEXT")
+    except:
+        pass
+
+    try:
+        cur.execute("ALTER TABLE users ADD COLUMN payer_name TEXT")
+    except:
+        pass
+
+    conn.commit()
+    conn.close()
+
+migrate_db()
+
 USERS_FILE = Path("users.json")
 
 def load_users():

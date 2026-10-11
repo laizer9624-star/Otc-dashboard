@@ -1002,6 +1002,8 @@ class Handler(SimpleHTTPRequestHandler):
             payload = {}
 
         if self.path == "/api/register":
+            print("REGISTER REQUEST:", payload)
+
             username = payload.get("username")
             password = payload.get("password")
 

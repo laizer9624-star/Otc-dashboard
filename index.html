@@ -852,6 +852,12 @@ After payment, your account will be activated and you can use GEMiN M1 Signal Bo
 <button onclick="loginAccount()">Ingia</button>
 
 <p id="login-msg"></p>
+
+<div id="user-info-box" style="display:none;background:#1f2937;padding:15px;border-radius:10px;margin-top:15px;">
+<h3>👤 GEMiN Account</h3>
+<p id="user-info"></p>
+</div>
+
 </div>
 
 
@@ -1391,12 +1397,26 @@ async function loginAccount(){
     if(data.ok){
         localStorage.setItem("gemin_user", username);
 
+        if(!data.premium){
+            document.getElementById("login-msg").innerText =
+            "Account yako bado haija-activate. Tafadhali lipa na omba activation.";
+            return;
+        }
+
         if(data.premium){
             document.getElementById("premium-box").style.display = "none";
         }
 
         document.getElementById("login-msg").innerText =
-        "Login imefanikiwa ✅ Premium ACTIVE\nSiku zilizobaki: " + data.days_left;
+        "Login imefanikiwa ✅";
+
+        document.getElementById("user-info-box").style.display = "block";
+
+        document.getElementById("user-info").innerHTML =
+        "👤 User: " + data.username +
+        "<br>📌 Status: " + data.status +
+        "<br>⭐ Premium: " + (data.premium ? "ACTIVE" : "INACTIVE") +
+        "<br>⏳ Days left: " + data.days_left;
     }else{
         document.getElementById("login-msg").innerText =
         data.message;
@@ -1410,7 +1430,7 @@ async function loginAccount(){
 
 window.addEventListener("load", function(){
 
-    let user = null; // force login screen for testing
+    let user = localStorage.getItem("gemin_user");
 
     let dashboard = document.getElementById("dashboard-area");
     let premium = document.getElementById("premium-box");

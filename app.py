@@ -756,6 +756,13 @@ class Handler(SimpleHTTPRequestHandler):
                 <td>{u.get("status")}</td>
                 <td>{u.get("plan")}</td>
                 <td>{u.get("expiry")}</td>
+                <td>
+                <a href="/admin/activate?username={u.get("username")}">
+                <button style="padding:6px;background:#16a34a;color:white;border:0;border-radius:5px;">
+                ACTIVATE
+                </button>
+                </a>
+                </td>
                 </tr>
                 """
 
@@ -777,6 +784,7 @@ class Handler(SimpleHTTPRequestHandler):
             <th>Status</th>
             <th>Plan</th>
             <th>Expiry</th>
+            <th>Action</th>
             </tr>
             {rows}
             </table>
@@ -788,6 +796,33 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Content-Type","text/html")
             self.end_headers()
             self.wfile.write(html.encode())
+            return
+
+        elif parsed.path == "/admin/activate":
+            query = urllib.parse.parse_qs(parsed.query)
+            username = query.get("username", [""])[0]
+
+            users = load_users()
+            found = False
+
+            for u in users:
+                if u.get("username") == username:
+                    u["status"] = "ACTIVE"
+                    u["expiry"] = (
+                        datetime.now(timezone.utc)
+                        + timedelta(days=14)
+                    ).isoformat()
+                    found = True
+
+            if found:
+                save_users(users)
+
+            self.send_response(302)
+            self.send_header(
+                "Location",
+                "/admin"
+            )
+            self.end_headers()
             return
 
         elif parsed.path == "/api/test":

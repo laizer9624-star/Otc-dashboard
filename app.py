@@ -1033,6 +1033,8 @@ class Handler(SimpleHTTPRequestHandler):
 
         elif self.path == "/api/payment":
             username = payload.get("username")
+            transaction_id = payload.get("transaction_id")
+            payer_name = payload.get("payer_name")
 
             users = load_users()
             found = False
@@ -1040,6 +1042,8 @@ class Handler(SimpleHTTPRequestHandler):
             for u in users:
                 if u.get("username") == username:
                     u["status"] = "PAYMENT_SENT"
+                    u["transaction_id"] = transaction_id
+                    u["payer_name"] = payer_name
                     found = True
 
             if found:

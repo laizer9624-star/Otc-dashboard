@@ -840,6 +840,10 @@ td{
 After payment, your account will be activated and you can use GEMiN M1 Signal Bot.
 </p>
 
+<input id="transaction_id" placeholder="Transaction ID" style="width:100%;padding:10px;margin:5px;">
+
+<input id="payer_name" placeholder="Jina la mtumaji wa malipo" style="width:100%;padding:10px;margin:5px;">
+
 <button onclick="paymentSent()" style="background:#16a34a;">
 💰 Nimeshalipa - Omba Activation
 </button>
@@ -1347,17 +1351,23 @@ loadRobotStatus();
 async function paymentSent(){
 
     let username = document.getElementById("username").value;
+    let transaction_id = document.getElementById("transaction_id").value;
+    let payer_name = document.getElementById("payer_name").value;
 
-    if(!username){
+    if(!username || !transaction_id || !payer_name){
         document.getElementById("login-msg").innerText =
-        "Kwanza andika Username";
+        "Jaza Username, Transaction ID na jina la mtumaji";
         return;
     }
 
     let res = await fetch("/api/payment",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({username})
+        body:JSON.stringify({
+            username,
+            transaction_id,
+            payer_name
+        })
     });
 
     let data = await res.json();

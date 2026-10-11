@@ -870,6 +870,10 @@ After payment, your account will be activated and you can use GEMiN M1 Signal Bo
 <h1>📊 GEMiN M1 Signal Bot</h1>
 <div class="small">M1 Market Signal Engine</div>
 
+<button onclick="logoutAccount()" style="background:#dc2626;margin:10px 0;">
+🚪 Logout
+</button>
+
 <div class="card">
 
 <div class="card">
@@ -1339,6 +1343,12 @@ loadRobotStatus();
 loadRobotStatus();
 
 
+
+
+function logoutAccount(){
+    localStorage.removeItem("gemin_user");
+    location.reload();
+}
 
 </script>
 

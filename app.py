@@ -745,7 +745,52 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
 
-        if parsed.path == "/api/test":
+        if parsed.path == "/admin":
+            users = load_users()
+
+            rows = ""
+            for u in users:
+                rows += f"""
+                <tr>
+                <td>{u.get("username")}</td>
+                <td>{u.get("status")}</td>
+                <td>{u.get("plan")}</td>
+                <td>{u.get("expiry")}</td>
+                </tr>
+                """
+
+            html = f"""
+            <html>
+            <head>
+            <title>GEMiN Admin</title>
+            <style>
+            body{{background:#111827;color:white;font-family:Arial;padding:20px}}
+            table{{width:100%;border-collapse:collapse}}
+            td,th{{border:1px solid #555;padding:8px}}
+            </style>
+            </head>
+            <body>
+            <h2>GEMiN ADMIN PANEL</h2>
+            <table>
+            <tr>
+            <th>User</th>
+            <th>Status</th>
+            <th>Plan</th>
+            <th>Expiry</th>
+            </tr>
+            {rows}
+            </table>
+            </body>
+            </html>
+            """
+
+            self.send_response(200)
+            self.send_header("Content-Type","text/html")
+            self.end_headers()
+            self.wfile.write(html.encode())
+            return
+
+        elif parsed.path == "/api/test":
             data = {
                 "status": "ok",
                 "message": "OTC Signal Dashboard backend iko tayari"

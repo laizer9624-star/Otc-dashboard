@@ -60,6 +60,7 @@ def login_user(username, password):
 
 
 DB_FILE = "gemin.db"
+ADMIN_KEY = "GEMiN_ADMIN_2026"
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -1084,12 +1085,20 @@ class Handler(SimpleHTTPRequestHandler):
 
         elif self.path == "/api/activate":
             username = payload.get("username")
+            admin_key = payload.get("admin_key")
 
-            if activate_user(username):
+            if admin_key != ADMIN_KEY:
+                data = {
+                    "ok": False,
+                    "message": "Admin key sio sahihi"
+                }
+
+            elif activate_user(username):
                 data = {
                     "ok": True,
                     "message": "User activated ✅"
                 }
+
             else:
                 data = {
                     "ok": False,

@@ -1526,7 +1526,10 @@ async function activateUser(username){
         headers:{
             "Content-Type":"application/json"
         },
-        body:JSON.stringify({username})
+        body:JSON.stringify({
+            username,
+            admin_key:"GEMiN_ADMIN_2026"
+        })
     });
 
     let data = await res.json();

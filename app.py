@@ -953,6 +953,9 @@ class Handler(SimpleHTTPRequestHandler):
                 "enabled": state["enabled"]
             }
 
+        elif parsed.path == "/api/users":
+            data = load_users()
+
         elif parsed.path == "/api/history":
             try:
                 path = Path("history.json")

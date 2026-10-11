@@ -1388,19 +1388,24 @@ async function paymentSent(){
 }
 
 async function registerAccount(){
-    alert("Register function imefika");
 
-    let username = document.getElementById("username").value;
-    let password = document.getElementById("password").value;
+    try{
+        let username = document.getElementById("username").value;
+        let password = document.getElementById("password").value;
 
-    let res = await fetch("/api/register",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({username,password})
-    });
+        let res = await fetch("/api/register",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({username,password})
+        });
 
-    let data = await res.json();
-    document.getElementById("login-msg").innerText = data.message;
+        let data = await res.json();
+        document.getElementById("login-msg").innerText = data.message;
+
+    }catch(e){
+        document.getElementById("login-msg").innerText =
+        "Error: " + e.message;
+    }
 }
 
 

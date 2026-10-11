@@ -1481,6 +1481,59 @@ window.addEventListener("load", function(){
 
 </script>
 
+
+<div id="admin-box" style="display:none;background:#111827;color:white;padding:15px;margin:20px;border-radius:10px;">
+<h3>👑 GEMiN Admin Approval</h3>
+<div id="pending-users">Loading...</div>
+</div>
+
+<script>
+async function loadPendingUsers(){
+
+    let res = await fetch("/api/pending-users");
+    let users = await res.json();
+
+    let box = document.getElementById("pending-users");
+
+    if(!users.length){
+        box.innerHTML = "Hakuna maombi mapya";
+        return;
+    }
+
+    box.innerHTML = users.map(u => `
+        <div style="background:#1f2937;padding:10px;margin:8px;border-radius:8px;">
+        👤 ${u.username}<br>
+        💳 ${u.transaction_id}<br>
+        🧾 ${u.payer_name}<br>
+        <button onclick="activateUser('${u.username}')">
+        Activate
+        </button>
+        </div>
+    `).join("");
+}
+
+async function activateUser(username){
+
+    let res = await fetch("/api/activate",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({username})
+    });
+
+    let data = await res.json();
+    alert(data.message);
+
+    loadPendingUsers();
+}
+
+if(localStorage.getItem("gemin_user")=="Laizer"){
+    document.getElementById("admin-box").style.display="block";
+    loadPendingUsers();
+}
+</script>
+
 </body>
 </html>
 

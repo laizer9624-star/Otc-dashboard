@@ -32,6 +32,22 @@ def register_user(username, password):
 
     return {"ok": True, "message": "Account imeundwa, subiri approval"}
 
+def activate_user(username):
+    users = load_users()
+
+    for u in users:
+        if u.get("username") == username:
+            u["status"] = "ACTIVE"
+            u["expiry"] = (
+                datetime.now(timezone.utc) + timedelta(days=14)
+            ).isoformat()
+
+            save_users(users)
+            return True
+
+    return False
+
+
 def login_user(username, password):
     users = load_users()
 
@@ -953,6 +969,13 @@ class Handler(SimpleHTTPRequestHandler):
                 "enabled": state["enabled"]
             }
 
+        elif parsed.path == "/api/pending-users":
+            users = load_users()
+            data = [
+                u for u in users
+                if u.get("status") == "PAYMENT_SENT"
+            ]
+
         elif parsed.path == "/api/users":
             data = load_users()
 
@@ -1058,6 +1081,20 @@ class Handler(SimpleHTTPRequestHandler):
                 }
             else:
                 data = {"ok": False, "message": "Login imekataa"}
+
+        elif self.path == "/api/activate":
+            username = payload.get("username")
+
+            if activate_user(username):
+                data = {
+                    "ok": True,
+                    "message": "User activated ✅"
+                }
+            else:
+                data = {
+                    "ok": False,
+                    "message": "User hajapatikana"
+                }
 
         elif self.path == "/api/payment":
             username = payload.get("username")

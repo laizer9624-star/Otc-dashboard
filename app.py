@@ -7,6 +7,71 @@ from signalrcore.hub_connection_builder import HubConnectionBuilder
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+
+# ===== GEMiN USER SYSTEM =====
+
+def register_user(username, password):
+    users = load_users()
+
+    for u in users:
+        if u.get("username") == username:
+            return {"ok": False, "message": "Username tayari ipo"}
+
+    user = {
+        "username": username,
+        "password": password,
+        "status": "PENDING",
+        "plan": "GEMiN Premium 14 Days",
+        "price": 20000,
+        "expiry": None
+    }
+
+    users.append(user)
+    save_users(users)
+
+    return {"ok": True, "message": "Account imeundwa, subiri approval"}
+
+def login_user(username, password):
+    users = load_users()
+
+    for u in users:
+        if u.get("username") == username and u.get("password") == password:
+            return u
+
+    return None
+
+
+
+USERS_FILE = Path("users.json")
+
+def load_users():
+    try:
+        return json.loads(USERS_FILE.read_text())
+    except Exception:
+        return []
+
+def save_users(users):
+    USERS_FILE.write_text(json.dumps(users, indent=2))
+
+def check_premium(user):
+    if user.get("status") != "ACTIVE":
+        return False
+
+    expiry = user.get("expiry")
+    if not expiry:
+        return False
+
+    try:
+        if datetime.now(timezone.utc) < datetime.fromisoformat(expiry):
+            return True
+        else:
+            user["status"] = "EXPIRED"
+            save_users(load_users())
+            return False
+    except Exception:
+        return False
+
+
 def update_pending_results(candles):
     import json
     from pathlib import Path
@@ -760,6 +825,84 @@ class Handler(SimpleHTTPRequestHandler):
         else:
             super().do_GET()
             return
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode())
+
+
+
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(length).decode()
+        data = {}
+
+        try:
+            payload = json.loads(body)
+        except Exception:
+            payload = {}
+
+        if self.path == "/api/register":
+            username = payload.get("username")
+            password = payload.get("password")
+
+            if not username or not password:
+                data = {"ok": False, "message": "Jaza taarifa zote"}
+            else:
+                data = register_user(username, password)
+
+        elif self.path == "/api/login":
+            username = payload.get("username")
+            password = payload.get("password")
+
+            user = login_user(username, password)
+
+            if user:
+                premium_status = check_premium(user)
+
+                days_left = 0
+                if premium_status and user.get("expiry"):
+                    expiry_date = datetime.fromisoformat(user["expiry"])
+                    remaining = expiry_date - datetime.now(timezone.utc)
+                    days_left = max(0, remaining.days)
+
+                data = {
+                    "ok": True,
+                    "username": user["username"],
+                    "status": user["status"],
+                    "premium": premium_status,
+                    "days_left": days_left
+                }
+            else:
+                data = {"ok": False, "message": "Login imekataa"}
+
+        elif self.path == "/api/payment":
+            username = payload.get("username")
+
+            users = load_users()
+            found = False
+
+            for u in users:
+                if u.get("username") == username:
+                    u["status"] = "PAYMENT_SENT"
+                    found = True
+
+            if found:
+                save_users(users)
+                data = {
+                    "ok": True,
+                    "message": "Ombi la malipo limetumwa ✅"
+                }
+            else:
+                data = {
+                    "ok": False,
+                    "message": "Username haijapatikana"
+                }
+
+
+        else:
+            data = {"error": "Unknown endpoint"}
 
         self.send_response(200)
         self.send_header("Content-Type", "application/json")

@@ -826,6 +826,34 @@ td{
 <body>
 
 <div class="container">
+<div id="premium-box" class="card" style="text-align:center;">
+<h2>🔐 GEMiN Premium</h2>
+<p>Fungua account ili kutumia GEMiN M1 Signal Bot</p>
+<p><b>TSh 20,000 / Siku 14</b></p>
+
+<div style="background:#111827;padding:10px;border-radius:10px;margin:10px 0;">
+<p>💳 Lipa kupitia namba ya malipo:</p>
+<p><b>WEKA NAMBA HAPA</b></p>
+<p style="font-size:13px;color:#aaa;">
+Baada ya malipo, account itawekwa ACTIVE na utaweza kutumia GEMiN M1 Signal Bot.
+</p>
+
+<button onclick="paymentSent()" style="background:#16a34a;">
+💰 Nimeshalipa - Omba Activation
+</button>
+</div>
+
+<input id="username" placeholder="Username" style="width:100%;padding:10px;margin:5px;">
+<input id="password" type="password" placeholder="Password" style="width:100%;padding:10px;margin:5px;">
+
+<button onclick="registerAccount()">Jisajili</button>
+<button onclick="loginAccount()">Ingia</button>
+
+<p id="login-msg"></p>
+</div>
+
+
+<div id="dashboard-area">
 
 <h1>📊 GEMiN M1 Signal Bot</h1>
 <div class="small">M1 Market Signal Engine</div>
@@ -994,8 +1022,6 @@ DATA: --
 
 </div>
 
-</div>
-
 <div class="card">
 
 <h3>📌 Analysis</h3>
@@ -1010,8 +1036,6 @@ Bonyeza ANALYZE kuanza.
 
 <div class="small">
 ⚠️ Hii ni analyzer ya signals. Haifanyi automatic trading.
-</div>
-
 </div>
 
 </div>
@@ -1303,6 +1327,106 @@ loadRobotStatus();
 loadRobotStatus();
 
 
+
+</script>
+
+
+</div>
+
+<script>
+
+
+async function paymentSent(){
+
+    let username = document.getElementById("username").value;
+
+    if(!username){
+        document.getElementById("login-msg").innerText =
+        "Kwanza andika Username";
+        return;
+    }
+
+    let res = await fetch("/api/payment",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({username})
+    });
+
+    let data = await res.json();
+
+    document.getElementById("login-msg").innerText =
+    data.message;
+
+}
+
+async function registerAccount(){
+    let username = document.getElementById("username").value;
+    let password = document.getElementById("password").value;
+
+    let res = await fetch("/api/register",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({username,password})
+    });
+
+    let data = await res.json();
+    document.getElementById("login-msg").innerText = data.message;
+}
+
+
+async function loginAccount(){
+    let username = document.getElementById("username").value;
+    let password = document.getElementById("password").value;
+
+    let res = await fetch("/api/login",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({username,password})
+    });
+
+    let data = await res.json();
+
+    if(data.ok){
+        localStorage.setItem("gemin_user", username);
+
+        if(data.premium){
+            document.getElementById("premium-box").style.display = "none";
+        }
+
+        document.getElementById("login-msg").innerText =
+        "Login imefanikiwa ✅ Premium ACTIVE\nSiku zilizobaki: " + data.days_left;
+    }else{
+        document.getElementById("login-msg").innerText =
+        data.message;
+    }
+}
+
+</script>
+
+
+<script>
+
+window.addEventListener("load", function(){
+
+    let user = null; // force login screen for testing
+
+    let dashboard = document.getElementById("dashboard-area");
+    let premium = document.getElementById("premium-box");
+
+    if(!user){
+        if(dashboard){
+            dashboard.style.display = "none";
+        }
+    }else{
+        if(dashboard){
+            dashboard.style.display = "block";
+        }
+        if(premium){
+            premium.style.display = "none";
+        }
+    }
+
+});
 
 </script>
 

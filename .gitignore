@@ -3,3 +3,6 @@
 !app.py
 !index.html
 !requirements.txt
+
+!gemin.db
+!admin.py

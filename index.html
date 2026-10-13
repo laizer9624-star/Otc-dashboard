@@ -941,6 +941,274 @@ select{
     }
 }
 
+
+/* ===== GEMiN PREMIUM REDESIGN V2 ===== */
+:root {
+  color-scheme: dark;
+  --gm-bg: #070b12;
+  --gm-panel: #101824;
+  --gm-panel-2: #0b121d;
+  --gm-border: #253449;
+  --gm-text: #f3f7fc;
+  --gm-muted: #91a0b5;
+  --gm-green: #24d6a0;
+  --gm-blue: #55a8ff;
+}
+
+html, body {
+  background: var(--gm-bg) !important;
+  color: var(--gm-text) !important;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 50% -10%, #15334b 0%, transparent 48%),
+    linear-gradient(180deg, #080e18 0%, #070b12 100%) !important;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  width: 100% !important;
+  max-width: 940px !important;
+  margin: 0 auto !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+}
+
+h1 {
+  font-size: clamp(24px, 5vw, 34px) !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.8px !important;
+  margin: 12px 0 5px !important;
+}
+
+h2 { font-weight: 850 !important; letter-spacing: -0.4px; }
+h3 { font-weight: 750 !important; }
+
+.small, .reading-label {
+  color: var(--gm-muted) !important;
+}
+
+.card {
+  background: linear-gradient(145deg, #121c2a, #0c131e) !important;
+  border: 1px solid var(--gm-border) !important;
+  border-radius: 18px !important;
+  padding: 17px !important;
+  margin: 12px 0 !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,.20) !important;
+}
+
+.header {
+  background: rgba(12,19,30,.94) !important;
+  border: 1px solid var(--gm-border) !important;
+  border-radius: 18px !important;
+}
+
+#premium-box {
+  max-width: 540px !important;
+  margin: 28px auto !important;
+  padding: clamp(18px, 5vw, 30px) !important;
+  border-color: #2a4860 !important;
+  box-shadow: 0 20px 55px rgba(0,0,0,.32) !important;
+}
+
+#premium-box h2 {
+  color: #eaf5ff !important;
+  font-size: 26px !important;
+}
+
+#premium-box > p:first-of-type {
+  color: #aab9cc !important;
+  line-height: 1.6 !important;
+}
+
+#premium-box input,
+input,
+textarea,
+select {
+  display: block;
+  max-width: 100%;
+  min-height: 44px;
+  box-sizing: border-box !important;
+  background: #09111c !important;
+  color: #f4f8ff !important;
+  border: 1px solid #2a3a50 !important;
+  border-radius: 10px !important;
+  padding: 11px 12px !important;
+  font: inherit !important;
+}
+
+#premium-box input {
+  width: 100% !important;
+  margin: 8px 0 !important;
+}
+
+input::placeholder {
+  color: #718198 !important;
+}
+
+button {
+  min-height: 42px;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  border-radius: 11px !important;
+  padding: 11px 15px !important;
+  color: #fff !important;
+  font-weight: 750 !important;
+  font-size: 13px !important;
+  cursor: pointer;
+  transition: filter .15s ease, transform .15s ease;
+}
+
+button:active {
+  transform: scale(.98);
+  filter: brightness(.92);
+}
+
+#premium-box button {
+  width: 100% !important;
+  margin: 5px 0 !important;
+}
+
+#dashboard-area > h1 {
+  background: linear-gradient(90deg, #f5f9ff, #7bdcc4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+#dashboard-area > .small {
+  margin-bottom: 18px !important;
+  letter-spacing: .7px;
+}
+
+#robot-status {
+  padding: 11px !important;
+  background: #09151b !important;
+  border: 1px solid #1d493f !important;
+  border-radius: 10px !important;
+  color: #5ce4b7 !important;
+  font-weight: 750 !important;
+}
+
+#robot-toggle {
+  width: 100% !important;
+}
+
+#pair {
+  width: 100% !important;
+  margin: 8px 0 14px !important;
+  min-height: 47px !important;
+}
+
+#analyze-btn {
+  min-height: 48px !important;
+  background: linear-gradient(135deg, #138b72, #16b88d) !important;
+  border-color: #36d9ad !important;
+  box-shadow: 0 7px 20px rgba(22,184,141,.15) !important;
+  letter-spacing: .4px;
+}
+
+#accuracy-badge {
+  min-height: 48px;
+  box-sizing: border-box;
+  border-color: #34465c !important;
+  background: #0b1420 !important;
+  border-radius: 11px !important;
+}
+
+#signal {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-radius: 14px !important;
+  border: 1px solid #2b4058 !important;
+  background: linear-gradient(135deg, #111f30, #0b121d) !important;
+  color: #f3f7fc;
+  font-size: clamp(24px, 6vw, 34px) !important;
+  font-weight: 900 !important;
+  letter-spacing: 1px;
+  margin: 10px 0 !important;
+}
+
+.entry-box, .reading-card, .stat-card, .metric-card, .stat {
+  background: linear-gradient(145deg, #111d2b, #0b131e) !important;
+  border: 1px solid #223247 !important;
+  border-radius: 12px !important;
+}
+
+.entry-box {
+  padding: 13px !important;
+}
+
+.value, .reading-value {
+  color: #f2f7ff !important;
+  font-weight: 800 !important;
+  overflow-wrap: anywhere;
+}
+
+.readings-title {
+  color: #c5d5e8 !important;
+  font-weight: 800 !important;
+  letter-spacing: .35px;
+  margin: 18px 0 10px !important;
+}
+
+.market-readings {
+  gap: 9px !important;
+}
+
+.reading-card {
+  padding: 11px !important;
+  min-width: 0;
+}
+
+#analyze-status, #data-status {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+#admin-box {
+  border: 1px solid #34465c !important;
+  border-radius: 15px !important;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 10px !important;
+  }
+
+  .card {
+    padding: 13px !important;
+    border-radius: 15px !important;
+    margin: 10px 0 !important;
+  }
+
+  #premium-box {
+    margin: 12px auto !important;
+  }
+
+  .entry-row {
+    gap: 8px !important;
+  }
+
+  .reading-card {
+    padding: 9px !important;
+  }
+
+  button {
+    max-width: 100%;
+  }
+}
+/* ===== END GEMiN PREMIUM REDESIGN V2 ===== */
+
 </style>
 
 </head>

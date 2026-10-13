@@ -3,6 +3,23 @@
 !app.py
 !index.html
 !requirements.txt
-
-!gemin.db
 !admin.py
+
+# Private user data and databases
+gemin.db
+*.db
+*.sqlite
+*.sqlite3
+users.json
+robot_state.json
+history.json
+
+# Backups, secrets and generated files
+*backup*
+.env
+.env.*
+*.bak
+*.backup
+*.db.*
+__pycache__/
+*.pyc

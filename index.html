@@ -1722,7 +1722,11 @@ button.style.background = "#238636";
 }
 
 function toggleRobot(){
-fetch("/api/robot-toggle")
+fetch("/api/robot-toggle", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({})
+})
 .then(response => response.json())
 .then(data => {
 loadRobotStatus();
@@ -1735,9 +1739,22 @@ loadRobotStatus();
 
 
 
-function logoutAccount(){
-    localStorage.removeItem("gemin_user");
-    location.reload();
+async function logoutAccount(){
+    try {
+        await fetch("/api/logout", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({})
+        });
+    } catch (error) {
+        console.error("Logout request failed");
+    } finally {
+        localStorage.removeItem("gemin_user");
+        location.reload();
+    }
 }
 
 </script>
@@ -1815,7 +1832,7 @@ async function loginAccount(){
 
     if(data.ok){
 
-        if(!data.premium){
+        if(!data.premium && !data.is_admin){
             localStorage.removeItem("gemin_user");
 
             let dashboard = document.getElementById("dashboard-area");
@@ -1823,14 +1840,34 @@ async function loginAccount(){
                 dashboard.style.display = "none";
             }
 
+            let premiumBox = document.getElementById("premium-box");
+            if(premiumBox){
+                premiumBox.style.display = "block";
+            }
+
             document.getElementById("login-msg").innerText =
-            "Account yako bado haija-activate. Tafadhali lipa na omba activation.";
+            "Account bado haija-activate. Tuma taarifa za malipo ili ikaguliwe.";
             return;
         }
 
-        if(data.premium){
-            localStorage.setItem("gemin_user", username);
-            document.getElementById("premium-box").style.display = "none";
+        localStorage.setItem("gemin_user", data.username);
+
+        let dashboard = document.getElementById("dashboard-area");
+        if(dashboard){
+            dashboard.style.display = data.premium ? "block" : "none";
+        }
+
+        let premiumBox = document.getElementById("premium-box");
+        if(premiumBox){
+            premiumBox.style.display = data.premium ? "none" : "block";
+        }
+
+        let adminBox = document.getElementById("admin-box");
+        if(adminBox){
+            adminBox.style.display = data.is_admin ? "block" : "none";
+        }
+        if(data.is_admin){
+            loadPendingUsers();
         }
 
         document.getElementById("login-msg").innerText =
@@ -1854,28 +1891,53 @@ async function loginAccount(){
 
 <script>
 
-window.addEventListener("load", function(){
+async function restoreGeminSession(){
+    const dashboard = document.getElementById("dashboard-area");
+    const premium = document.getElementById("premium-box");
+    const admin = document.getElementById("admin-box");
 
-    let user = localStorage.getItem("gemin_user");
+    if(dashboard) dashboard.style.display = "none";
+    if(admin) admin.style.display = "none";
+    if(premium) premium.style.display = "block";
 
-    let dashboard = document.getElementById("dashboard-area");
-    let premium = document.getElementById("premium-box");
+    try{
+        const response = await fetch("/api/me", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({})
+        });
 
-    if(!user){
-        if(dashboard){
-            dashboard.style.display = "none";
+        if(!response.ok) throw new Error("Session haipo au imeisha");
+        const data = await response.json();
+        if(!data.ok) throw new Error("Session si halali");
+
+        localStorage.setItem("gemin_user", data.username);
+
+        if(dashboard) dashboard.style.display = data.premium ? "block" : "none";
+        if(premium) premium.style.display = data.premium ? "none" : "block";
+        if(admin) admin.style.display = data.is_admin ? "block" : "none";
+
+        const infoBox = document.getElementById("user-info-box");
+        const info = document.getElementById("user-info");
+        if(infoBox && info) {
+            infoBox.style.display = "block";
+            info.textContent =
+                "User: " + data.username +
+                " | Status: " + data.status +
+                " | Premium: " + (data.premium ? "ACTIVE" : "INACTIVE") +
+                " | Days left: " + data.days_left;
         }
-    }else{
-        if(dashboard){
-            dashboard.style.display = "block";
-        }
-        if(premium){
-            premium.style.display = "none";
-        }
+
+        if(data.is_admin) await loadPendingUsers();
+    }catch(error){
+        localStorage.removeItem("gemin_user");
+        if(dashboard) dashboard.style.display = "none";
+        if(admin) admin.style.display = "none";
+        if(premium) premium.style.display = "block";
     }
+}
 
-});
-
+window.addEventListener("load", restoreGeminSession);
 </script>
 
 
@@ -1886,53 +1948,68 @@ window.addEventListener("load", function(){
 
 <script>
 async function loadPendingUsers(){
+    const box = document.getElementById("pending-users");
+    if(!box) return;
 
-    let res = await fetch("/api/pending-users");
-    let users = await res.json();
+    try{
+        const response = await fetch("/api/pending-users", {
+            cache: "no-store"
+        });
+        const users = await response.json();
 
-    let box = document.getElementById("pending-users");
+        if(!response.ok || !Array.isArray(users)){
+            box.textContent = users.message || "Admin session inahitajika.";
+            return;
+        }
 
-    if(!users.length){
-        box.innerHTML = "Hakuna maombi mapya";
-        return;
+        box.replaceChildren();
+
+        if(users.length === 0){
+            box.textContent = "Hakuna maombi mapya";
+            return;
+        }
+
+        for(const user of users){
+            const card = document.createElement("div");
+            card.style.cssText =
+                "background:#1f2937;padding:10px;margin:8px;border-radius:8px;";
+
+            const details = document.createElement("div");
+            details.textContent =
+                "User: " + (user.username || "") +
+                " | Transaction: " + (user.transaction_id || "") +
+                " | Payer: " + (user.payer_name || "");
+
+            const button = document.createElement("button");
+            button.textContent = "Activate";
+            button.addEventListener("click", () => activateUser(user.username));
+
+            card.append(details, button);
+            box.appendChild(card);
+        }
+    }catch(error){
+        box.textContent = "Imeshindikana kupakia maombi ya malipo.";
     }
-
-    box.innerHTML = users.map(u => `
-        <div style="background:#1f2937;padding:10px;margin:8px;border-radius:8px;">
-        👤 ${u.username}<br>
-        💳 ${u.transaction_id}<br>
-        🧾 ${u.payer_name}<br>
-        <button onclick="activateUser('${u.username}')">
-        Activate
-        </button>
-        </div>
-    `).join("");
 }
 
 async function activateUser(username){
+    if(!username) return;
 
-    let res = await fetch("/api/activate",{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-            username,
-            admin_key:"GEMiN_ADMIN_2026"
-        })
-    });
+    try{
+        const response = await fetch("/api/activate", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({username})
+        });
+        const data = await response.json();
+        alert(data.message || "Ombi limekamilika.");
 
-    let data = await res.json();
-    alert(data.message);
-
-    loadPendingUsers();
+        if(response.ok) await loadPendingUsers();
+    }catch(error){
+        alert("Imeshindikana kuwasiliana na server.");
+    }
 }
 
-if(localStorage.getItem("gemin_user")=="Laizer"){
-    document.getElementById("admin-box").style.display="block";
-    loadPendingUsers();
-}
-</script>
 
 </body>
 </html>

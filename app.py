@@ -2,6 +2,10 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 import json
 import sqlite3
 import os
+import hashlib
+import hmac
+import secrets
+from http.cookies import SimpleCookie
 import urllib.parse
 import urllib.request
 from signalrcore.hub_connection_builder import HubConnectionBuilder
@@ -20,7 +24,7 @@ def register_user(username, password):
 
     user = {
         "username": username,
-        "password": password,
+        "password": hash_password(password),
         "status": "PENDING",
         "plan": "GEMiN Premium 14 Days",
         "price": 20000,
@@ -49,10 +53,38 @@ def activate_user(username):
 
 
 def login_user(username, password):
+    if not isinstance(username, str) or not isinstance(password, str):
+        return None
+
     users = load_users()
 
     for u in users:
-        if u.get("username") == username and u.get("password") == password:
+        if u.get("username") != username:
+            continue
+
+        stored = str(u.get("password") or "")
+
+        if stored.startswith("pbkdf2_sha256$"):
+            try:
+                scheme, rounds, salt, expected = stored.split("$", 3)
+                if scheme != "pbkdf2_sha256":
+                    return None
+                actual = hashlib.pbkdf2_hmac(
+                    "sha256",
+                    password.encode("utf-8"),
+                    bytes.fromhex(salt),
+                    int(rounds)
+                ).hex()
+                if hmac.compare_digest(actual, expected):
+                    return u
+                return None
+            except (ValueError, TypeError):
+                return None
+
+        # Migrate a legacy plaintext password after a successful login.
+        if hmac.compare_digest(stored, password):
+            u["password"] = hash_password(password)
+            save_users(users)
             return u
 
     return None
@@ -60,7 +92,17 @@ def login_user(username, password):
 
 
 DB_FILE = "gemin.db"
-ADMIN_KEY = "GEMiN_ADMIN_2026"
+
+def hash_password(password):
+    salt = secrets.token_hex(16)
+    rounds = 310000
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        bytes.fromhex(salt),
+        rounds
+    ).hex()
+    return f"pbkdf2_sha256${rounds}${salt}${digest}"
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -100,6 +142,87 @@ def migrate_db():
     conn.close()
 
 migrate_db()
+
+# Server-side sessions: only a hash of each random token is stored.
+SESSION_HOURS = 12
+ADMIN_USERNAME = os.environ.get("GEMIN_ADMIN_USERNAME", "").strip()
+
+def init_sessions_db():
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS sessions (
+                token_hash TEXT PRIMARY KEY,
+                username TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        """)
+        conn.commit()
+    finally:
+        conn.close()
+
+def create_session(username):
+    token = secrets.token_urlsafe(32)
+    now = datetime.now(timezone.utc)
+    expires = now + timedelta(hours=SESSION_HOURS)
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        conn.execute(
+            "INSERT INTO sessions (token_hash, username, expires_at, created_at) VALUES (?, ?, ?, ?)",
+            (token_hash, username, expires.isoformat(), now.isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return token, expires
+
+def get_session_user(token):
+    if not token or not isinstance(token, str):
+        return None
+
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    now = datetime.now(timezone.utc).isoformat()
+
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        row = conn.execute(
+            "SELECT username, expires_at FROM sessions WHERE token_hash = ?",
+            (token_hash,)
+        ).fetchone()
+
+        if not row:
+            return None
+
+        username, expires_at = row
+        if expires_at <= now:
+            conn.execute("DELETE FROM sessions WHERE token_hash = ?", (token_hash,))
+            conn.commit()
+            return None
+    finally:
+        conn.close()
+
+    return next(
+        (u for u in load_users() if u.get("username") == username),
+        None
+    )
+
+def delete_session(token):
+    if not token or not isinstance(token, str):
+        return
+
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        conn.execute("DELETE FROM sessions WHERE token_hash = ?", (token_hash,))
+        conn.commit()
+    finally:
+        conn.close()
+
+init_sessions_db()
 
 USERS_FILE = Path("users.json")
 
@@ -159,13 +282,26 @@ def check_premium(user):
         return False
 
     try:
-        if datetime.now(timezone.utc) < datetime.fromisoformat(expiry):
+        expiry_date = datetime.fromisoformat(expiry)
+        if expiry_date.tzinfo is None:
+            expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+
+        if datetime.now(timezone.utc) < expiry_date:
             return True
-        else:
-            user["status"] = "EXPIRED"
-            save_users(load_users())
-            return False
-    except Exception:
+
+        conn = sqlite3.connect(DB_FILE)
+        try:
+            conn.execute(
+                "UPDATE users SET status = ? WHERE username = ? AND status = ?",
+                ("EXPIRED", user.get("username"), "ACTIVE")
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        user["status"] = "EXPIRED"
+        return False
+    except (ValueError, TypeError):
         return False
 
 
@@ -782,117 +918,109 @@ def on_live_tick(data):
 hub.on("ReceiveTick", on_live_tick)
 class Handler(SimpleHTTPRequestHandler):
 
+    def session_token(self):
+        cookie = SimpleCookie()
+        try:
+            cookie.load(self.headers.get("Cookie", ""))
+            morsel = cookie.get("gemin_session")
+            return morsel.value if morsel else None
+        except Exception:
+            return None
+
+    def current_user(self):
+        return get_session_user(self.session_token())
+
+    def is_admin(self, user):
+        return bool(
+            user
+            and ADMIN_USERNAME
+            and user.get("username") == ADMIN_USERNAME
+        )
+
+    def send_json(self, data, status=200, set_cookie=None):
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        if set_cookie:
+            self.send_header("Set-Cookie", set_cookie)
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode("utf-8"))
+
+    def session_cookie(self, token, expires):
+        secure = "; Secure" if self.headers.get("X-Forwarded-Proto", "").lower() == "https" else ""
+        return (
+            f"gemin_session={token}; Path=/; HttpOnly; SameSite=Lax"
+            f"; Expires={expires.strftime('%a, %d %b %Y %H:%M:%S GMT')}{secure}"
+        )
+
+    def clear_session_cookie(self):
+        secure = "; Secure" if self.headers.get("X-Forwarded-Proto", "").lower() == "https" else ""
+        return f"gemin_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0{secure}"
+
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
+        route = parsed.path
 
-        if parsed.path == "/admin":
-            users = load_users()
-
-            pending_rows = ""
-            active_rows = ""
-
-            for u in users:
-                action = (
-                    "<a href='/admin/activate?username=" + u.get("username") +
-                    "'><button style='padding:6px;background:#16a34a;color:white;border:0;border-radius:5px;'>ACTIVATE</button></a>"
-                    if u.get("status") == "PAYMENT_SENT"
-                    else "ACTIVE"
-                )
-
-                row = f"""
-                <tr>
-                <td>{u.get("username")}</td>
-                <td>{u.get("status")}</td>
-                <td>{u.get("plan")}</td>
-                <td>{u.get("expiry")}</td>
-                <td>{action}</td>
-                </tr>
-                """
-
-                if u.get("status") == "PAYMENT_SENT":
-                    pending_rows += row
-                else:
-                    active_rows += row
-
-            html = f"""
-            <html>
-            <head>
-            <title>GEMiN Admin</title>
-            <style>
-            body{{background:#111827;color:white;font-family:Arial;padding:20px}}
-            table{{width:100%;border-collapse:collapse}}
-            td,th{{border:1px solid #555;padding:8px}}
-            </style>
-            </head>
-            <body>
-            <h2>GEMiN ADMIN PANEL</h2>
-
-            <div style="margin-bottom:15px;">
-            Pending Payments:
-            {sum(1 for u in users if u.get("status") == "PAYMENT_SENT")}
-            |
-            Active Users:
-            {sum(1 for u in users if u.get("status") == "ACTIVE")}
-            </div>
-
-            <table>
-            <tr>
-            <th>User</th>
-            <th>Status</th>
-            <th>Plan</th>
-            <th>Expiry</th>
-            <th>Action</th>
-            </tr>
-            {pending_rows}{active_rows}
-            </table>
-            </body>
-            </html>
-            """
-
-            self.send_response(200)
-            self.send_header("Content-Type","text/html")
-            self.end_headers()
-            self.wfile.write(html.encode())
-            return
-
-        elif parsed.path == "/admin/activate":
-            query = urllib.parse.parse_qs(parsed.query)
-            username = query.get("username", [""])[0]
-
-            users = load_users()
-            found = False
-
-            for u in users:
-                if u.get("username") == username:
-                    u["status"] = "ACTIVE"
-                    u["expiry"] = (
-                        datetime.now(timezone.utc)
-                        + timedelta(days=14)
-                    ).isoformat()
-                    found = True
-
-            if found:
-                save_users(users)
-
-            self.send_response(302)
-            self.send_header(
-                "Location",
-                "/admin"
+        # Old admin HTML and GET activation are disabled.
+        if route in ("/admin", "/admin/activate"):
+            self.send_json(
+                {"ok": False, "message": "Tumia admin session"},
+                status=403
             )
-            self.end_headers()
             return
 
-        elif parsed.path == "/api/test":
+        # Premium-only dashboard endpoints.
+        premium_routes = {
+            "/api/live-analyze",
+            "/api/history",
+            "/api/robot-status",
+            "/api/analyze",
+        }
+        if route in premium_routes:
+            user = self.current_user()
+            if not user:
+                self.send_json(
+                    {"ok": False, "message": "Ingia kwanza"},
+                    status=401
+                )
+                return
+            if not check_premium(user):
+                self.send_json(
+                    {"ok": False, "message": "GEMiN Premium inahitajika"},
+                    status=403
+                )
+                return
+
+        # User lists must only be available to an authenticated admin.
+        if route in ("/api/pending-users", "/api/users"):
+            user = self.current_user()
+            if not self.is_admin(user):
+                self.send_json(
+                    {"ok": False, "message": "Admin access inahitajika"},
+                    status=403
+                )
+                return
+
+        # State changes must never happen through GET.
+        if route == "/api/robot-toggle":
+            self.send_json(
+                {"ok": False, "message": "Tumia POST"},
+                status=405
+            )
+            return
+
+        if parsed.path == "/api/test":
             data = {
                 "status": "ok",
                 "message": "OTC Signal Dashboard backend iko tayari"
             }
 
         elif parsed.path == "/api/live-tick":
-            data = {
-                "live_tick": live_tick,
-                "live_prices_count": len(live_prices)
-            }
+            self.send_json(
+                {"ok": False, "message": "Endpoint haipatikani"},
+                status=404
+            )
+            return
 
         elif parsed.path == "/api/live-analyze":
             query = urllib.parse.parse_qs(parsed.query)
@@ -955,30 +1083,20 @@ class Handler(SimpleHTTPRequestHandler):
                 "enabled": bool(state.get("enabled", False))
             }
 
-        elif parsed.path == "/api/robot-toggle":
-            try:
-                state = json.loads(Path("robot_state.json").read_text())
-            except Exception:
-                state = {"enabled": False}
-
-            state["enabled"] = not bool(state.get("enabled", False))
-            Path("robot_state.json").write_text(
-                json.dumps(state, indent=2)
-            )
-
-            data = {
-                "enabled": state["enabled"]
-            }
-
         elif parsed.path == "/api/pending-users":
             users = load_users()
             data = [
-                u for u in users
+                {k: v for k, v in u.items() if k != "password"}
+                for u in users
                 if u.get("status") == "PAYMENT_SENT"
             ]
 
         elif parsed.path == "/api/users":
-            data = load_users()
+            users = load_users()
+            data = [
+                {k: v for k, v in u.items() if k != "password"}
+                for u in users
+            ]
 
         elif parsed.path == "/api/history":
             try:
@@ -1038,109 +1156,196 @@ class Handler(SimpleHTTPRequestHandler):
 
 
     def do_POST(self):
-        length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(length).decode()
-        data = {}
+        status_code = 200
+        set_cookie = None
 
         try:
-            payload = json.loads(body)
-        except Exception:
-            payload = {}
+            length = int(self.headers.get("Content-Length", "0"))
+            if length < 0 or length > 100000:
+                self.send_json(
+                    {"ok": False, "message": "Ombi si sahihi"},
+                    status=400
+                )
+                return
 
-        if self.path == "/api/register":
-            print("REGISTER REQUEST:", payload)
+            body = self.rfile.read(length).decode("utf-8")
+            payload = json.loads(body) if body else {}
+            if not isinstance(payload, dict):
+                raise ValueError("JSON object required")
+        except (ValueError, UnicodeDecodeError, json.JSONDecodeError):
+            self.send_json(
+                {"ok": False, "message": "Taarifa hazisomeki"},
+                status=400
+            )
+            return
 
+        path = urllib.parse.urlsplit(self.path).path
+
+        if path == "/api/register":
             username = payload.get("username")
             password = payload.get("password")
 
-            if not username or not password:
+            if not isinstance(username, str) or not isinstance(password, str):
                 data = {"ok": False, "message": "Jaza taarifa zote"}
+                status_code = 400
+            elif not username.strip() or not password:
+                data = {"ok": False, "message": "Jaza taarifa zote"}
+                status_code = 400
+            elif len(username) > 80 or len(password) > 256:
+                data = {"ok": False, "message": "Taarifa ni ndefu sana"}
+                status_code = 400
             else:
-                data = register_user(username, password)
+                data = register_user(username.strip(), password)
 
-        elif self.path == "/api/login":
+        elif path == "/api/login":
             username = payload.get("username")
             password = payload.get("password")
-
             user = login_user(username, password)
 
-            if user:
-                premium_status = check_premium(user)
+            if not user:
+                data = {"ok": False, "message": "Login imekataa"}
+                status_code = 401
+            else:
+                token, expires = create_session(user["username"])
+                set_cookie = self.session_cookie(token, expires)
 
+                premium = check_premium(user)
                 days_left = 0
-                if premium_status and user.get("expiry"):
+
+                if premium and user.get("expiry"):
                     expiry_date = datetime.fromisoformat(user["expiry"])
-                    remaining = expiry_date - datetime.now(timezone.utc)
-                    days_left = max(0, remaining.days)
+                    if expiry_date.tzinfo is None:
+                        expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+                    days_left = max(
+                        0,
+                        (expiry_date - datetime.now(timezone.utc)).days
+                    )
 
                 data = {
                     "ok": True,
                     "username": user["username"],
                     "status": user["status"],
-                    "premium": premium_status,
-                    "days_left": days_left
+                    "premium": premium,
+                    "days_left": days_left,
+                    "is_admin": self.is_admin(user)
                 }
+
+        elif path == "/api/me":
+            user = self.current_user()
+
+            if not user:
+                data = {"ok": False, "message": "Ingia kwanza"}
+                status_code = 401
             else:
-                data = {"ok": False, "message": "Login imekataa"}
+                premium = check_premium(user)
+                days_left = 0
 
-        elif self.path == "/api/activate":
-            username = payload.get("username")
-            admin_key = payload.get("admin_key")
+                if premium and user.get("expiry"):
+                    expiry_date = datetime.fromisoformat(user["expiry"])
+                    if expiry_date.tzinfo is None:
+                        expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+                    days_left = max(
+                        0,
+                        (expiry_date - datetime.now(timezone.utc)).days
+                    )
 
-            if admin_key != ADMIN_KEY:
-                data = {
-                    "ok": False,
-                    "message": "Admin key sio sahihi"
-                }
-
-            elif activate_user(username):
                 data = {
                     "ok": True,
-                    "message": "User activated ✅"
+                    "username": user["username"],
+                    "status": user["status"],
+                    "premium": premium,
+                    "days_left": days_left,
+                    "is_admin": self.is_admin(user)
                 }
 
+        elif path == "/api/logout":
+            delete_session(self.session_token())
+            set_cookie = self.clear_session_cookie()
+            data = {"ok": True, "message": "Umetoka kwenye akaunti"}
+
+        elif path == "/api/activate":
+            user = self.current_user()
+
+            if not self.is_admin(user):
+                data = {"ok": False, "message": "Admin access inahitajika"}
+                status_code = 403
             else:
-                data = {
-                    "ok": False,
-                    "message": "User hajapatikana"
-                }
+                username = payload.get("username")
 
-        elif self.path == "/api/payment":
-            username = payload.get("username")
-            transaction_id = payload.get("transaction_id")
-            payer_name = payload.get("payer_name")
+                if isinstance(username, str) and activate_user(username):
+                    data = {"ok": True, "message": "User activated"}
+                else:
+                    data = {"ok": False, "message": "User hajapatikana"}
+                    status_code = 404
 
-            users = load_users()
-            found = False
+        elif path == "/api/robot-toggle":
+            user = self.current_user()
 
-            for u in users:
-                if u.get("username") == username:
-                    u["status"] = "PAYMENT_SENT"
-                    u["transaction_id"] = transaction_id
-                    u["payer_name"] = payer_name
-                    found = True
-
-            if found:
-                save_users(users)
-                data = {
-                    "ok": True,
-                    "message": "Ombi la malipo limetumwa ✅"
-                }
+            if not user:
+                data = {"ok": False, "message": "Ingia kwanza"}
+                status_code = 401
+            elif not self.is_admin(user):
+                data = {"ok": False, "message": "Admin pekee anaweza kubadilisha robot"}
+                status_code = 403
             else:
-                data = {
-                    "ok": False,
-                    "message": "Username haijapatikana"
-                }
+                try:
+                    state = json.loads(Path("robot_state.json").read_text())
+                except Exception:
+                    state = {"enabled": False}
 
+                state["enabled"] = not bool(state.get("enabled", False))
+                Path("robot_state.json").write_text(
+                    json.dumps(state, indent=2)
+                )
+                data = {"ok": True, "enabled": state["enabled"]}
+
+        elif path == "/api/payment":
+            user = self.current_user()
+
+            if not user:
+                data = {"ok": False, "message": "Ingia kwanza"}
+                status_code = 401
+            else:
+                transaction_id = payload.get("transaction_id")
+                payer_name = payload.get("payer_name")
+
+                if (
+                    not isinstance(transaction_id, str)
+                    or not transaction_id.strip()
+                    or len(transaction_id) > 200
+                    or not isinstance(payer_name, str)
+                    or not payer_name.strip()
+                    or len(payer_name) > 120
+                ):
+                    data = {"ok": False, "message": "Jaza taarifa za malipo"}
+                    status_code = 400
+                else:
+                    users = load_users()
+                    found = False
+
+                    for item in users:
+                        if item.get("username") == user.get("username"):
+                            item["status"] = "PAYMENT_SENT"
+                            item["transaction_id"] = transaction_id.strip()
+                            item["payer_name"] = payer_name.strip()
+                            found = True
+                            break
+
+                    if found:
+                        save_users(users)
+                        data = {
+                            "ok": True,
+                            "message": "Ombi la malipo limetumwa"
+                        }
+                    else:
+                        data = {"ok": False, "message": "Akaunti haijapatikana"}
+                        status_code = 404
 
         else:
-            data = {"error": "Unknown endpoint"}
+            data = {"ok": False, "message": "Endpoint haijapatikana"}
+            status_code = 404
 
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        self.wfile.write(json.dumps(data).encode())
-
+        self.send_json(data, status=status_code, set_cookie=set_cookie)
 
 hub.start()
 hub.send("Subscribe", [["EURUSD", "GBPUSD_otc", "USDJPY_otc", "AUDUSD_otc", "BTCUSD_otc"]])

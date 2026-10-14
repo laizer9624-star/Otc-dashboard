@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="sw">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GEMiN Admin Login</title>
+<style>
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0f14;color:#fff;font-family:Arial,sans-serif}
+.card{width:min(90%,360px);padding:22px;border:1px solid #30363d;border-radius:16px;background:#161b22}
+input,button{box-sizing:border-box;width:100%;padding:13px;margin-top:12px;border-radius:9px;border:1px solid #30363d;font-size:16px}
+input{background:#0d1117;color:white}
+button{background:#238636;color:white;font-weight:bold}
+#msg{white-space:pre-wrap;color:#fca5a5}
+</style>
+</head>
+<body>
+<div class="card">
+<h2>🔐 GEMiN Admin</h2>
+<p>Admin pekee ndiye anayeruhusiwa.</p>
+<form id="login-form">
+<input id="username" autocomplete="username" placeholder="Admin username" required>
+<input id="password" type="password" autocomplete="current-password" placeholder="Admin password" required>
+<button type="submit">Ingia kwenye Dashboard</button>
+</form>
+<p id="msg" role="status"></p>
+</div>
+<script>
+document.getElementById("login-form").addEventListener("submit", async function(e){
+  e.preventDefault();
+  const msg = document.getElementById("msg");
+  msg.textContent = "Inathibitisha...";
+  try {
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        username: document.getElementById("username").value.trim(),
+        password: document.getElementById("password").value
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.message || "Login imekataa");
+    if (!data.is_admin) {
+      await fetch("/api/logout", {method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+      throw new Error("Akaunti hii si admin.");
+    }
+    window.location.href = "/";
+  } catch (err) {
+    msg.textContent = err.message || "Imeshindikana kuingia.";
+  }
+});
+</script>
+</body>
+</html>

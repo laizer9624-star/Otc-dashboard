@@ -4,6 +4,7 @@
 !index.html
 !requirements.txt
 !admin.py
+!admin-login.html
 
 # Private user data and databases
 gemin.db

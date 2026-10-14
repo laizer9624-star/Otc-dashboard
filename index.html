@@ -1854,12 +1854,12 @@ async function loginAccount(){
 
         let dashboard = document.getElementById("dashboard-area");
         if(dashboard){
-            dashboard.style.display = data.premium ? "block" : "none";
+            dashboard.style.display = (data.premium || data.is_admin) ? "block" : "none";
         }
 
         let premiumBox = document.getElementById("premium-box");
         if(premiumBox){
-            premiumBox.style.display = data.premium ? "none" : "block";
+            premiumBox.style.display = (data.premium || data.is_admin) ? "none" : "block";
         }
 
         let adminBox = document.getElementById("admin-box");
@@ -1913,8 +1913,8 @@ async function restoreGeminSession(){
 
         localStorage.setItem("gemin_user", data.username);
 
-        if(dashboard) dashboard.style.display = data.premium ? "block" : "none";
-        if(premium) premium.style.display = data.premium ? "none" : "block";
+        if(dashboard) dashboard.style.display = (data.premium || data.is_admin) ? "block" : "none";
+        if(premium) premium.style.display = (data.premium || data.is_admin) ? "none" : "block";
         if(admin) admin.style.display = data.is_admin ? "block" : "none";
 
         const infoBox = document.getElementById("user-info-box");

@@ -273,6 +273,50 @@ def save_users(users):
     conn.commit()
     conn.close()
 
+
+def bootstrap_admin():
+    username = ADMIN_USERNAME
+    password = os.environ.get("GEMIN_ADMIN_PASSWORD", "")
+
+    if not username:
+        print("GEMiN ADMIN: GEMIN_ADMIN_USERNAME haijawekwa.")
+        return
+
+    if len(password) < 12 or len(password) > 256:
+        print("GEMiN ADMIN: Weka GEMIN_ADMIN_PASSWORD yenye herufi/namba 12 au zaidi.")
+        return
+
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        exists = conn.execute(
+            "SELECT 1 FROM users WHERE username = ?", (username,)
+        ).fetchone()
+
+        if exists:
+            print("GEMiN ADMIN: Akaunti ipo; hakuna password iliyobadilishwa.")
+            return
+
+        conn.execute(
+            """INSERT INTO users
+               (username, password, status, plan, price, expiry)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (
+                username,
+                hash_password(password),
+                "ACTIVE",
+                "GEMiN Admin",
+                0,
+                None,
+            ),
+        )
+        conn.commit()
+        print("GEMiN ADMIN: Akaunti ya admin imeundwa.")
+    finally:
+        conn.close()
+
+
+bootstrap_admin()
+
 def check_premium(user):
     if user.get("status") != "ACTIVE":
         return False
@@ -984,7 +1028,7 @@ class Handler(SimpleHTTPRequestHandler):
                     status=401
                 )
                 return
-            if not check_premium(user):
+            if not self.is_admin(user) and not check_premium(user):
                 self.send_json(
                     {"ok": False, "message": "GEMiN Premium inahitajika"},
                     status=403

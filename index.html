@@ -1847,12 +1847,8 @@ async function loginAccount(){
 
 
 <script>
-
 async function restoreGeminSession(){
-    const dashboard = document.getElementById("dashboard-area");
     const admin = document.getElementById("admin-box");
-
-    if (dashboard) dashboard.style.display = "none";
     if (admin) admin.style.display = "none";
 
     try {
@@ -1861,26 +1857,17 @@ async function restoreGeminSession(){
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({})
         });
-
-        if (!response.ok) throw new Error("Admin session haipo au imeisha");
-
         const data = await response.json();
-        if (!data.ok || !data.is_admin) {
-            throw new Error("Admin pekee anaruhusiwa");
-        }
 
-        localStorage.setItem("gemin_user", data.username);
-        if (dashboard) dashboard.style.display = "block";
-        if (admin) admin.style.display = "block";
-
-        if (typeof loadPendingUsers === "function") {
-            await loadPendingUsers();
+        if (response.ok && data.ok && data.is_admin) {
+            localStorage.setItem("gemin_user", data.username);
+            if (admin) admin.style.display = "block";
+            if (typeof loadPendingUsers === "function") {
+                await loadPendingUsers();
+            }
         }
     } catch (error) {
-        localStorage.removeItem("gemin_user");
-        if (dashboard) dashboard.style.display = "none";
-        if (admin) admin.style.display = "none";
-        console.warn("Dashboard imefungwa: admin session haijathibitishwa.");
+        console.warn("Admin session haijathibitishwa.");
     }
 }
 window.addEventListener("load", restoreGeminSession);

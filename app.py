@@ -293,7 +293,12 @@ def bootstrap_admin():
         ).fetchone()
 
         if exists:
-            print("GEMiN ADMIN: Akaunti ipo; hakuna password iliyobadilishwa.")
+            conn.execute(
+                "UPDATE users SET password = ? WHERE username = ?",
+                (hash_password(password), username),
+            )
+            conn.commit()
+            print("GEMiN ADMIN: Password ya admin imesasishwa.")
             return
 
         conn.execute(

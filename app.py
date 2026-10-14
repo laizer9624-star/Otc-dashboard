@@ -1074,6 +1074,21 @@ class Handler(SimpleHTTPRequestHandler):
                 data = {"error": str(e), "symbol": symbol}
 
         elif parsed.path == "/api/robot-status":
+            user = self.current_user()
+            if not user:
+                self.send_json(
+                    {"ok": False, "message": "Ingia kwanza"},
+                    status=401
+                )
+                return
+
+            if not self.is_admin(user) and not check_premium(user):
+                self.send_json(
+                    {"ok": False, "message": "GEMiN Premium inahitajika"},
+                    status=403
+                )
+                return
+
             try:
                 state = json.loads(Path("robot_state.json").read_text())
             except Exception:

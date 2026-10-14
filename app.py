@@ -165,7 +165,7 @@ def init_sessions_db():
 def create_session(username):
     token = secrets.token_urlsafe(32)
     now = datetime.now(timezone.utc)
-    expires = now + timedelta(hours=SESSION_HOURS)
+    expires = now + (timedelta(days=30) if username == ADMIN_USERNAME else timedelta(hours=SESSION_HOURS))
     token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
 
     conn = sqlite3.connect(DB_FILE)

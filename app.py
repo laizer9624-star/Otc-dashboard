@@ -165,7 +165,7 @@ def init_sessions_db():
 def create_session(username):
     token = secrets.token_urlsafe(32)
     now = datetime.now(timezone.utc)
-    expires = now + (timedelta(days=30) if username == ADMIN_USERNAME else timedelta(hours=SESSION_HOURS))
+    expires = now + (timedelta(days=365) if username == ADMIN_USERNAME else timedelta(hours=SESSION_HOURS))
     token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
 
     conn = sqlite3.connect(DB_FILE)
@@ -982,8 +982,12 @@ class Handler(SimpleHTTPRequestHandler):
     def is_admin(self, user):
         return bool(
             user
-            and ADMIN_USERNAME
-            and user.get("username") == ADMIN_USERNAME
+            and user.get("status") == "ACTIVE"
+            and user.get("plan") == "GEMiN Admin"
+            and user.get("username") in {
+                ADMIN_USERNAME,
+                "admin2",
+            }
         )
 
     def send_json(self, data, status=200, set_cookie=None):

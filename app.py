@@ -1020,7 +1020,7 @@ class Handler(SimpleHTTPRequestHandler):
 
         # Premium-only dashboard endpoints.
         premium_routes = {
-            "/api/live-analyze",
+
             "/api/history",
             "/api/robot-status",
             "/api/analyze",

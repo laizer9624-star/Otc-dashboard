@@ -1216,10 +1216,53 @@ table {
 <body>
 
 <div class="container">
+<div id="premium-box" class="card" style="text-align:center;">
+<h2>🔐 GEMiN Premium</h2>
+<p>Fungua account ili kutumia GEMiN M1 Signal Bot</p>
+<p><b>TSh 20,000 / Siku 14</b></p>
+
+<div style="background:#111827;padding:10px;border-radius:10px;margin:10px 0;">
+<p>💳 Payment via Bank Transfer:</p>
+<p><b>🏦 Bank Transfer</b></p>
+<p>Bank: <b>Stanbic Bank</b></p>
+<p>Account Number: <b>9120003265771</b></p>
+<p style="font-size:13px;color:#aaa;">
+After payment, your account will be activated and you can use GEMiN M1 Signal Bot.
+</p>
+
+<input id="transaction_id" placeholder="Transaction ID" style="width:100%;padding:10px;margin:5px;">
+
+<input id="payer_name" placeholder="Jina la mtumaji wa malipo" style="width:100%;padding:10px;margin:5px;">
+
+<button onclick="paymentSent()" style="background:#16a34a;">
+💰 Nimeshalipa - Omba Activation
+</button>
+</div>
+
+<input id="username" placeholder="Username" style="width:100%;padding:10px;margin:5px;">
+<input id="password" type="password" placeholder="Password" style="width:100%;padding:10px;margin:5px;">
+
+<button onclick="registerAccount()">Jisajili</button>
+<button onclick="loginAccount()">Ingia</button>
+
+<p id="login-msg"></p>
+
+<div id="user-info-box" style="display:none;background:#1f2937;padding:15px;border-radius:10px;margin-top:15px;">
+<h3>👤 GEMiN Account</h3>
+<p id="user-info"></p>
+</div>
+
+</div>
+
+
 <div id="dashboard-area">
 
 <h1>📊 GEMiN M1 Signal Bot</h1>
 <div class="small">M1 Market Signal Engine</div>
+
+<button onclick="logoutAccount()" style="background:#dc2626;margin:10px 0;">
+🚪 Logout
+</button>
 
 <div class="card">
 
@@ -1789,7 +1832,7 @@ async function loginAccount(){
 
     if(data.ok){
 
-        if(!data.is_admin){
+        if(!data.premium && !data.is_admin){
             localStorage.removeItem("gemin_user");
 
             let dashboard = document.getElementById("dashboard-area");
@@ -1803,7 +1846,7 @@ async function loginAccount(){
             }
 
             document.getElementById("login-msg").innerText =
-            "Akaunti hii si Admin. Ni Admin pekee anayeruhusiwa kutumia robot.";
+            "Account bado haija-activate. Tuma taarifa za malipo ili ikaguliwe.";
             return;
         }
 
@@ -1811,12 +1854,12 @@ async function loginAccount(){
 
         let dashboard = document.getElementById("dashboard-area");
         if(dashboard){
-            dashboard.style.display = data.is_admin ? "block" : "none";
+            dashboard.style.display = (data.premium || data.is_admin) ? "block" : "none";
         }
 
         let premiumBox = document.getElementById("premium-box");
         if(premiumBox){
-            premiumBox.style.display = data.is_admin ? "none" : "block";
+            premiumBox.style.display = (data.premium || data.is_admin) ? "none" : "block";
         }
 
         let adminBox = document.getElementById("admin-box");
@@ -1847,29 +1890,53 @@ async function loginAccount(){
 
 
 <script>
-async function restoreGeminSession(){
-    const admin = document.getElementById("admin-box");
-    if (admin) admin.style.display = "none";
 
-    try {
+async function restoreGeminSession(){
+    const dashboard = document.getElementById("dashboard-area");
+    const premium = document.getElementById("premium-box");
+    const admin = document.getElementById("admin-box");
+
+    if(dashboard) dashboard.style.display = "none";
+    if(admin) admin.style.display = "none";
+    if(premium) premium.style.display = "block";
+
+    try{
         const response = await fetch("/api/me", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({})
         });
-        const data = await response.json();
 
-        if (response.ok && data.ok && data.is_admin) {
-            localStorage.setItem("gemin_user", data.username);
-            if (admin) admin.style.display = "block";
-            if (typeof loadPendingUsers === "function") {
-                await loadPendingUsers();
-            }
+        if(!response.ok) throw new Error("Session haipo au imeisha");
+        const data = await response.json();
+        if(!data.ok) throw new Error("Session si halali");
+
+        localStorage.setItem("gemin_user", data.username);
+
+        if(dashboard) dashboard.style.display = (data.premium || data.is_admin) ? "block" : "none";
+        if(premium) premium.style.display = (data.premium || data.is_admin) ? "none" : "block";
+        if(admin) admin.style.display = data.is_admin ? "block" : "none";
+
+        const infoBox = document.getElementById("user-info-box");
+        const info = document.getElementById("user-info");
+        if(infoBox && info) {
+            infoBox.style.display = "block";
+            info.textContent =
+                "User: " + data.username +
+                " | Status: " + data.status +
+                " | Premium: " + (data.premium ? "ACTIVE" : "INACTIVE") +
+                " | Days left: " + data.days_left;
         }
-    } catch (error) {
-        console.warn("Admin session haijathibitishwa.");
+
+        if(data.is_admin) await loadPendingUsers();
+    }catch(error){
+        localStorage.removeItem("gemin_user");
+        if(dashboard) dashboard.style.display = "none";
+        if(admin) admin.style.display = "none";
+        if(premium) premium.style.display = "block";
     }
 }
+
 window.addEventListener("load", restoreGeminSession);
 </script>
 
@@ -1943,6 +2010,8 @@ async function activateUser(username){
     }
 }
 
+
+</script>
 
 </body>
 </html>

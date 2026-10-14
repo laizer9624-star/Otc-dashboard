@@ -1033,9 +1033,9 @@ class Handler(SimpleHTTPRequestHandler):
                     status=401
                 )
                 return
-            if not self.is_admin(user) and not check_premium(user):
+            if not self.is_admin(user):
                 self.send_json(
-                    {"ok": False, "message": "GEMiN Premium inahitajika"},
+                    {"ok": False, "message": "Admin pekee anaweza kutumia robot"},
                     status=403
                 )
                 return
@@ -1131,9 +1131,9 @@ class Handler(SimpleHTTPRequestHandler):
                 )
                 return
 
-            if not self.is_admin(user) and not check_premium(user):
+            if not self.is_admin(user):
                 self.send_json(
-                    {"ok": False, "message": "GEMiN Premium inahitajika"},
+                    {"ok": False, "message": "Admin pekee anaweza kutumia robot"},
                     status=403
                 )
                 return

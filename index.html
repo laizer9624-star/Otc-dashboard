@@ -1789,7 +1789,7 @@ async function loginAccount(){
 
     if(data.ok){
 
-        if(!data.premium && !data.is_admin){
+        if(!data.is_admin){
             localStorage.removeItem("gemin_user");
 
             let dashboard = document.getElementById("dashboard-area");
@@ -1803,7 +1803,7 @@ async function loginAccount(){
             }
 
             document.getElementById("login-msg").innerText =
-            "Account bado haija-activate. Tuma taarifa za malipo ili ikaguliwe.";
+            "Akaunti hii si Admin. Ni Admin pekee anayeruhusiwa kutumia robot.";
             return;
         }
 
@@ -1811,12 +1811,12 @@ async function loginAccount(){
 
         let dashboard = document.getElementById("dashboard-area");
         if(dashboard){
-            dashboard.style.display = (data.premium || data.is_admin) ? "block" : "none";
+            dashboard.style.display = data.is_admin ? "block" : "none";
         }
 
         let premiumBox = document.getElementById("premium-box");
         if(premiumBox){
-            premiumBox.style.display = (data.premium || data.is_admin) ? "none" : "block";
+            premiumBox.style.display = data.is_admin ? "none" : "block";
         }
 
         let adminBox = document.getElementById("admin-box");

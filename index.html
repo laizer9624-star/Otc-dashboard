@@ -165,7 +165,31 @@ button:active{
 @media(min-width:650px){
   .container{padding-top:25px}
 }
-body{background:#070b12!important;color:#f5f7fb!important}.container{max-width:900px!important;margin:auto!important;padding:18px!important}.card{background:#101722!important;border:1px solid #263244!important;border-radius:18px!important;padding:18px!important;margin-bottom:16px!important;box-shadow:0 10px 30px #0006!important}.header{background:#101722!important;border:1px solid #263244!important;border-radius:18px!important;padding:20px!important}</style>
+body{background:#070b12!important;color:#f5f7fb!important}.container{max-width:900px!important;margin:auto!important;padding:18px!important}.card{background:#101722!important;border:1px solid #263244!important;border-radius:18px!important;padding:18px!important;margin-bottom:16px!important;box-shadow:0 10px 30px #0006!important}.header{background:#101722!important;border:1px solid #263244!important;border-radius:18px!important;padding:20px!important}
+/* GEMiN brand logo */
+.gemin-brand {
+  text-align: center;
+  margin: 0 auto 18px;
+}
+.gemin-logo {
+  display: block;
+  width: min(100%, 420px);
+  height: auto;
+  margin: 0 auto 10px;
+  border-radius: 12px;
+  object-fit: contain;
+}
+.gemin-brand h1 {
+  margin: 8px 0 5px;
+}
+@media (max-width: 480px) {
+  .gemin-logo {
+    width: 100%;
+    max-width: 340px;
+  }
+}
+
+</style>
 <link rel="stylesheet" href="/premium.css">
 <style id="gemin-professional-ui">
 *{box-sizing:border-box}
@@ -1324,8 +1348,15 @@ After payment, your account will be activated and you can use GEMiN M1 Signal Bo
 
 <div id="dashboard-area">
 
-<h1>📊 GEMiN M1 Signal Bot</h1>
-<div class="small">M1 Market Signal Engine</div>
+<div class="gemin-brand">
+  <img
+    src="/static/gemin-logo.png"
+    alt="GEMiN M1 Signal Bot Logo"
+    class="gemin-logo"
+  >
+  <h1>📊 GEMiN M1 Signal Bot</h1>
+  <div class="small">M1 Market Signal Engine</div>
+</div>
 
 <div class="card">
 

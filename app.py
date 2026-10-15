@@ -835,12 +835,13 @@ def analyze_candle_behavior(candles):
 
 
 def analyze_prices(prices, candles=None):
-    """M1 analyzer: EMA 9/21, RSI 7, Bollinger (20,2), Stochastic (5,3,3)."""
+    """GEMiN M1: EMA 9/21 na RSI 7 pekee ndizo huamua signal."""
     closed_candles = [
         c for c in (candles or [])
         if not c.get("isOpen", False)
         and all(c.get(k) is not None for k in ("open", "high", "low", "close"))
     ]
+
     closes = [float(c["close"]) for c in closed_candles]
     if not closes:
         closes = [float(x) for x in (prices or []) if x is not None]
@@ -848,14 +849,7 @@ def analyze_prices(prices, candles=None):
     rsi = calculate_rsi(closes, 7) if len(closes) >= 8 else None
     ema9 = calculate_ema(closes, 9) if len(closes) >= 9 else None
     ema21 = calculate_ema(closes, 21) if len(closes) >= 21 else None
-    atr = calculate_atr(closed_candles) if closed_candles else None
-    adx = calculate_adx(closed_candles) if closed_candles else None
-    candle_signal = candle_confirmation(closed_candles) if closed_candles else "NEUTRAL"
-    candle_behavior = analyze_candle_behavior(closed_candles) if closed_candles else {
-        "direction": "NEUTRAL", "pattern": "NO_DATA", "body_pct": 0,
-        "upper_wick_pct": 0, "lower_wick_pct": 0, "strength": "NONE",
-        "rejection": "NONE", "momentum": "NONE", "consecutive": 0
-    }
+
     reasons = []
     votes = []
 
@@ -866,88 +860,68 @@ def analyze_prices(prices, candles=None):
             votes.append(("EMA 9/21", "PUT"))
 
     if rsi is not None:
-        if 50 < rsi < 75:
+        if rsi > 50:
             votes.append(("RSI 7", "CALL"))
-        elif 25 < rsi < 50:
+        elif rsi < 50:
             votes.append(("RSI 7", "PUT"))
 
-    bb_upper = bb_middle = bb_lower = None
-    if len(closes) >= 20:
-        window = closes[-20:]
-        bb_middle = sum(window) / 20
-        variance = sum((x - bb_middle) ** 2 for x in window) / 20
-        bb_std = variance ** 0.5
-        bb_upper = bb_middle + 2 * bb_std
-        bb_lower = bb_middle - 2 * bb_std
-        if closes[-1] <= bb_lower:
-            votes.append(("Bollinger Bands", "CALL"))
-        elif closes[-1] >= bb_upper:
-            votes.append(("Bollinger Bands", "PUT"))
-
-    stoch_k = stoch_d = None
-    if len(closed_candles) >= 7:
-        raw_ks = []
-        for j in range(max(0, len(closed_candles) - 5), len(closed_candles)):
-            start = max(0, j - 4)
-            win = closed_candles[start:j + 1]
-            hi = max(float(x["high"]) for x in win)
-            lo = min(float(x["low"]) for x in win)
-            stoch_close = float(closed_candles[j]["close"])
-            raw_ks.append(50.0 if hi == lo else 100.0 * (stoch_close - lo) / (hi - lo))
-        smooth_ks = [sum(raw_ks[max(0, i - 2):i + 1]) / len(raw_ks[max(0, i - 2):i + 1]) for i in range(len(raw_ks))]
-        if len(smooth_ks) >= 3:
-            stoch_k = smooth_ks[-1]
-            stoch_d = sum(smooth_ks[-3:]) / 3
-            if stoch_k > stoch_d and stoch_k < 80:
-                votes.append(("Stochastic 5,3,3", "CALL"))
-            elif stoch_k < stoch_d and stoch_k > 20:
-                votes.append(("Stochastic 5,3,3", "PUT"))
-
-    call_votes = sum(1 for _, side in votes if side == "CALL")
-    put_votes = sum(1 for _, side in votes if side == "PUT")
-    candle_text = str(candle_signal or "").upper()
-    behavior_direction = str(candle_behavior.get("direction", "")).upper()
-    candle_call = ("BULL" in candle_text or candle_text == "CALL" or behavior_direction == "CALL" or "BULL" in behavior_direction)
-    candle_put = ("BEAR" in candle_text or candle_text == "PUT" or behavior_direction == "PUT" or "BEAR" in behavior_direction)
+    call_votes = sum(side == "CALL" for _, side in votes)
+    put_votes = sum(side == "PUT" for _, side in votes)
 
     signal = "WAIT"
     confidence = 0
-    if call_votes >= 3 and candle_call:
+
+    if len(closes) < 21 or ema9 is None or ema21 is None or rsi is None:
+        reasons.append("WAIT: data haitoshi kwa EMA 9/21 na RSI 7.")
+    elif call_votes == 2:
         signal = "CALL"
-        confidence = min(95, 60 + 10 * (call_votes - 2))
-        reasons.append(f"CALL: viashiria {call_votes}/4 vimekubaliana na candle confirmation.")
-    elif put_votes >= 3 and candle_put:
+        confidence = 60
+        reasons.append("CALL: EMA 9/21 na RSI 7 zimekubaliana.")
+    elif put_votes == 2:
         signal = "PUT"
-        confidence = min(95, 60 + 10 * (put_votes - 2))
-        reasons.append(f"PUT: viashiria {put_votes}/4 vimekubaliana na candle confirmation.")
+        confidence = 60
+        reasons.append("PUT: EMA 9/21 na RSI 7 zimekubaliana.")
     else:
-        reasons.append(f"WAIT: CALL votes={call_votes}, PUT votes={put_votes}; inahitaji angalau 3/4 na candle confirmation.")
+        reasons.append("WAIT: EMA 9/21 na RSI 7 hazijakubaliana au hazina mwelekeo wazi.")
 
     reasons.extend(f"{name}: {side}" for name, side in votes)
-    if not candle_call and not candle_put:
-        reasons.append(f"Candle confirmation haijaonyesha upande wazi: {candle_signal}.")
-    trend_strength = (abs(ema9 - ema21) / ema21 * 100) if ema9 is not None and ema21 not in (None, 0) else 0.0
+
+    trend_strength = (
+        abs(ema9 - ema21) / abs(ema21) * 100
+        if ema9 is not None and ema21 not in (None, 0) else 0.0
+    )
+
     score = call_votes - put_votes
-    candidate_rule = signal in ("CALL", "PUT")
+    candle_behavior = {
+        "direction": "NEUTRAL", "pattern": "NOT_USED",
+        "body_pct": 0, "upper_wick_pct": 0, "lower_wick_pct": 0,
+        "strength": "NOT_USED", "rejection": "NOT_USED",
+        "momentum": "NOT_USED", "consecutive": 0
+    }
 
     return {
-        "candle_confirmation": candle_signal,
+        "candle_confirmation": "NOT_USED",
         "candle_behavior": candle_behavior,
         "signal": signal,
         "confidence": confidence,
         "rsi": round(rsi, 2) if rsi is not None else None,
         "ema9": ema9,
         "ema21": ema21,
-        "atr": atr,
-        "adx": adx,
+        "atr": None,
+        "adx": None,
         "trend_strength": round(trend_strength, 5),
         "score": score,
-        "candidate_rule": candidate_rule,
-        "bollinger_upper": round(bb_upper, 8) if bb_upper is not None else None,
-        "bollinger_middle": round(bb_middle, 8) if bb_middle is not None else None,
-        "bollinger_lower": round(bb_lower, 8) if bb_lower is not None else None,
-        "stochastic_k": round(stoch_k, 2) if stoch_k is not None else None,
-        "stochastic_d": round(stoch_d, 2) if stoch_d is not None else None,
+        "call_votes": call_votes,
+        "put_votes": put_votes,
+        "call_score": float(call_votes),
+        "put_score": float(put_votes),
+        "adaptive_score": float(score),
+        "candidate_rule": signal in ("CALL", "PUT"),
+        "bollinger_upper": None,
+        "bollinger_middle": None,
+        "bollinger_lower": None,
+        "stochastic_k": None,
+        "stochastic_d": None,
         "reasons": reasons
     }
 

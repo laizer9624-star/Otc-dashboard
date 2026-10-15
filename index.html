@@ -1272,15 +1272,19 @@ ROBOT: OFF
 </button>
 </div>
 
-<label>Chagua Pair</label>
-
-<select id="pair">
+<label>Chagua Soko / Market</label>
+<select id="pair" onchange="updateMarketMode()">
+<optgroup label="STANDARD MARKET — SOKO LA KAWAIDA">
 <option value="EURUSD">EUR/USD</option>
+</optgroup>
+<optgroup label="OTC MARKET — SOKO LA OTC">
 <option value="GBPUSD_otc">GBP/USD OTC</option>
 <option value="USDJPY_otc">USD/JPY OTC</option>
 <option value="AUDUSD_otc">AUD/USD OTC</option>
 <option value="BTCUSD_otc">BTC/USD OTC</option>
+</optgroup>
 </select>
+<div id="market-mode" style="margin-top:6px;font-size:12px;color:#aab4c8">STANDARD MARKET — SOKO LA KAWAIDA</div>
 
 <div style="display:flex;gap:8px;align-items:center;">
 <button onclick="analyze()" id="analyze-btn" style="flex:1;">🔎 ANALYZE</button>
@@ -1493,6 +1497,15 @@ function updateSignalStrength(confidence){
         el.innerText = "--%";
         badge.style.color = "#facc15";
     }
+}
+
+function updateMarketMode() {
+    const pair = document.getElementById("pair");
+    const mode = document.getElementById("market-mode");
+    if (!pair || !mode) return;
+    mode.textContent = pair.value === "EURUSD"
+        ? "STANDARD MARKET — SOKO LA KAWAIDA"
+        : "OTC MARKET — SOKO LA OTC";
 }
 
 function analyze(){

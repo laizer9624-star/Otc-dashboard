@@ -1209,6 +1209,71 @@ table {
 }
 /* ===== END GEMiN PREMIUM REDESIGN V2 ===== */
 
+
+/* ===== GEMiN SEPARATE STANDARD / OTC PANELS ===== */
+.market-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  margin: 12px 0;
+  align-items: stretch;
+}
+.market-panel {
+  min-width: 0;
+  padding: 12px 9px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: #111827;
+}
+.standard-panel {
+  border-color: #168566;
+  background: linear-gradient(160deg, #102d26, #111827);
+}
+.otc-panel {
+  border-color: #7550a5;
+  background: linear-gradient(160deg, #29203b, #111827);
+}
+.market-panel h3 {
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0 0 5px;
+}
+.standard-panel h3 { color: #6ee7b7; }
+.otc-panel h3 { color: #c4b5fd; }
+.market-panel p {
+  font-size: 11px;
+  color: #aab4c8;
+  margin: 0 0 10px;
+}
+.market-panel .market-choice {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 4px;
+  margin: 6px 0;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  background: #1f2937;
+  color: #f8fafc;
+  font-size: 12px;
+  white-space: normal;
+}
+.market-panel .standard-choice.active {
+  background: #087f5b;
+  border-color: #6ee7b7;
+}
+.market-panel .market-choice.active {
+  background: #5b3b91;
+  border-color: #c4b5fd;
+}
+@media (max-width: 360px) {
+  .market-grid { gap: 6px; }
+  .market-panel { padding: 9px 5px; }
+  .market-panel h3 { font-size: 11px; }
+  .market-panel .market-choice { font-size: 11px; }
+}
+/* ===== END GEMiN SEPARATE MARKET PANELS ===== */
+
 </style>
 
 </head>
@@ -1272,19 +1337,42 @@ ROBOT: OFF
 </button>
 </div>
 
-<label>Chagua Soko / Market</label>
-<select id="pair" onchange="updateMarketMode()">
-<optgroup label="STANDARD MARKET — SOKO LA KAWAIDA">
+<label style="display:block;margin:12px 0;">Chagua Soko / Select Market</label>
+
+<!-- Selector hii inahifadhi compatibility na analyzer iliyopo -->
+<select id="pair" onchange="updateMarketMode()" style="display:none;">
 <option value="EURUSD">EUR/USD</option>
-</optgroup>
-<optgroup label="OTC MARKET — SOKO LA OTC">
 <option value="GBPUSD_otc">GBP/USD OTC</option>
 <option value="USDJPY_otc">USD/JPY OTC</option>
 <option value="AUDUSD_otc">AUD/USD OTC</option>
 <option value="BTCUSD_otc">BTC/USD OTC</option>
-</optgroup>
 </select>
-<div id="market-mode" style="margin-top:6px;font-size:12px;color:#aab4c8">STANDARD MARKET — SOKO LA KAWAIDA</div>
+
+<div class="market-grid">
+  <section class="market-panel standard-panel">
+    <h3>📈 STANDARD MARKET</h3>
+    <p>Soko la kawaida</p>
+    <button type="button" class="market-choice standard-choice active"
+      onclick="chooseMarket('EURUSD', this)">EUR/USD</button>
+  </section>
+
+  <section class="market-panel otc-panel">
+    <h3>🟣 OTC MARKET</h3>
+    <p>Soko la OTC</p>
+    <button type="button" class="market-choice"
+      onclick="chooseMarket('GBPUSD_otc', this)">GBP/USD OTC</button>
+    <button type="button" class="market-choice"
+      onclick="chooseMarket('USDJPY_otc', this)">USD/JPY OTC</button>
+    <button type="button" class="market-choice"
+      onclick="chooseMarket('AUDUSD_otc', this)">AUD/USD OTC</button>
+    <button type="button" class="market-choice"
+      onclick="chooseMarket('BTCUSD_otc', this)">BTC/USD OTC</button>
+  </section>
+</div>
+
+<div id="market-mode" style="margin-top:8px;font-size:12px;color:#aab4c8">
+STANDARD MARKET — SOKO LA KAWAIDA
+</div>
 
 <div style="display:flex;gap:8px;align-items:center;">
 <button onclick="analyze()" id="analyze-btn" style="flex:1;">🔎 ANALYZE</button>
@@ -1496,6 +1584,23 @@ function updateSignalStrength(confidence){
     } else {
         el.innerText = "--%";
         badge.style.color = "#facc15";
+    }
+}
+
+
+function chooseMarket(symbol, clickedButton) {
+    const pair = document.getElementById("pair");
+    if (!pair) return;
+
+    pair.value = symbol;
+    updateMarketMode();
+
+    document.querySelectorAll(".market-choice").forEach(function(button) {
+        button.classList.remove("active");
+    });
+
+    if (clickedButton) {
+        clickedButton.classList.add("active");
     }
 }
 

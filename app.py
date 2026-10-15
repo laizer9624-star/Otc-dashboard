@@ -1022,38 +1022,6 @@ class Handler(SimpleHTTPRequestHandler):
             )
             return
 
-        # Premium-only dashboard endpoints.
-        premium_routes = {
-
-            "/api/history",
-            "/api/robot-status",
-            "/api/analyze",
-        }
-        if route in premium_routes:
-            user = self.current_user()
-            if not user:
-                self.send_json(
-                    {"ok": False, "message": "Ingia kwanza"},
-                    status=401
-                )
-                return
-            if not self.is_admin(user):
-                self.send_json(
-                    {"ok": False, "message": "Admin pekee anaweza kutumia robot"},
-                    status=403
-                )
-                return
-
-        # User lists must only be available to an authenticated admin.
-        if route in ("/api/pending-users", "/api/users"):
-            user = self.current_user()
-            if not self.is_admin(user):
-                self.send_json(
-                    {"ok": False, "message": "Admin access inahitajika"},
-                    status=403
-                )
-                return
-
         # State changes must never happen through GET.
         if route == "/api/robot-toggle":
             self.send_json(
@@ -1127,21 +1095,6 @@ class Handler(SimpleHTTPRequestHandler):
                 data = {"error": str(e), "symbol": symbol}
 
         elif parsed.path == "/api/robot-status":
-            user = self.current_user()
-            if not user:
-                self.send_json(
-                    {"ok": False, "message": "Ingia kwanza"},
-                    status=401
-                )
-                return
-
-            if not self.is_admin(user):
-                self.send_json(
-                    {"ok": False, "message": "Admin pekee anaweza kutumia robot"},
-                    status=403
-                )
-                return
-
             try:
                 state = json.loads(Path("robot_state.json").read_text())
             except Exception:

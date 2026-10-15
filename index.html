@@ -1260,10 +1260,6 @@ After payment, your account will be activated and you can use GEMiN M1 Signal Bo
 <h1>📊 GEMiN M1 Signal Bot</h1>
 <div class="small">M1 Market Signal Engine</div>
 
-<button onclick="logoutAccount()" style="background:#dc2626;margin:10px 0;">
-🚪 Logout
-</button>
-
 <div class="card">
 
 <div class="card">
@@ -1891,53 +1887,10 @@ async function loginAccount(){
 
 <script>
 
-async function restoreGeminSession(){
+window.addEventListener("load", function(){
     const dashboard = document.getElementById("dashboard-area");
-    const premium = document.getElementById("premium-box");
-    const admin = document.getElementById("admin-box");
-
-    if(dashboard) dashboard.style.display = "none";
-    if(admin) admin.style.display = "none";
-    if(premium) premium.style.display = "block";
-
-    try{
-        const response = await fetch("/api/me", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({})
-        });
-
-        if(!response.ok) throw new Error("Session haipo au imeisha");
-        const data = await response.json();
-        if(!data.ok) throw new Error("Session si halali");
-
-        localStorage.setItem("gemin_user", data.username);
-
-        if(dashboard) dashboard.style.display = (data.premium || data.is_admin) ? "block" : "none";
-        if(premium) premium.style.display = (data.premium || data.is_admin) ? "none" : "block";
-        if(admin) admin.style.display = data.is_admin ? "block" : "none";
-
-        const infoBox = document.getElementById("user-info-box");
-        const info = document.getElementById("user-info");
-        if(infoBox && info) {
-            infoBox.style.display = "block";
-            info.textContent =
-                "User: " + data.username +
-                " | Status: " + data.status +
-                " | Premium: " + (data.premium ? "ACTIVE" : "INACTIVE") +
-                " | Days left: " + data.days_left;
-        }
-
-        if(data.is_admin) await loadPendingUsers();
-    }catch(error){
-        localStorage.removeItem("gemin_user");
-        if(dashboard) dashboard.style.display = "none";
-        if(admin) admin.style.display = "none";
-        if(premium) premium.style.display = "block";
-    }
-}
-
-window.addEventListener("load", restoreGeminSession);
+    if (dashboard) dashboard.style.display = "block";
+});
 </script>
 
 

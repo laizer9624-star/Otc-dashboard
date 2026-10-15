@@ -1,0 +1,23 @@
+{
+  "id": "/",
+  "name": "GEMiN M1 Signal Bot",
+  "short_name": "GEMiN",
+  "description": "GEMiN M1 Market Signal Engine",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#07182d",
+  "theme_color": "#07182d",
+  "icons": [
+    {
+      "src": "/static/gemin-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/gemin-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

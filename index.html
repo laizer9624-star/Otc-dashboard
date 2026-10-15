@@ -165,31 +165,7 @@ button:active{
 @media(min-width:650px){
   .container{padding-top:25px}
 }
-body{background:#070b12!important;color:#f5f7fb!important}.container{max-width:900px!important;margin:auto!important;padding:18px!important}.card{background:#101722!important;border:1px solid #263244!important;border-radius:18px!important;padding:18px!important;margin-bottom:16px!important;box-shadow:0 10px 30px #0006!important}.header{background:#101722!important;border:1px solid #263244!important;border-radius:18px!important;padding:20px!important}
-/* GEMiN brand logo */
-.gemin-brand {
-  text-align: center;
-  margin: 0 auto 18px;
-}
-.gemin-logo {
-  display: block;
-  width: min(100%, 420px);
-  height: auto;
-  margin: 0 auto 10px;
-  border-radius: 12px;
-  object-fit: contain;
-}
-.gemin-brand h1 {
-  margin: 8px 0 5px;
-}
-@media (max-width: 480px) {
-  .gemin-logo {
-    width: 100%;
-    max-width: 340px;
-  }
-}
-
-</style>
+body{background:#070b12!important;color:#f5f7fb!important}.container{max-width:900px!important;margin:auto!important;padding:18px!important}.card{background:#101722!important;border:1px solid #263244!important;border-radius:18px!important;padding:18px!important;margin-bottom:16px!important;box-shadow:0 10px 30px #0006!important}.header{background:#101722!important;border:1px solid #263244!important;border-radius:18px!important;padding:20px!important}</style>
 <link rel="stylesheet" href="/premium.css">
 <style id="gemin-professional-ui">
 *{box-sizing:border-box}
@@ -1300,52 +1276,41 @@ table {
 }
 /* ===== END GEMiN SEPARATE MARKET PANELS ===== */
 
+
+/* GEMiN brand logo */
+.gemin-brand {
+  text-align: center;
+  margin: 0 auto 18px;
+}
+.gemin-logo {
+  display: block;
+  width: min(100%, 420px);
+  height: auto;
+  margin: 0 auto 10px;
+  border-radius: 12px;
+  object-fit: contain;
+}
+.gemin-brand h1 {
+  margin: 8px 0 5px;
+}
+@media (max-width: 480px) {
+  .gemin-logo {
+    width: 100%;
+    max-width: 340px;
+  }
+}
+
 </style>
 
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/static/gemin-icon-192.png">
+<link rel="apple-touch-icon" href="/static/gemin-icon-192.png">
+<meta name="theme-color" content="#07182d">
 </head>
 
 <body>
 
 <div class="container">
-<div id="premium-box" class="card" style="text-align:center;">
-<h2>🔐 GEMiN Premium</h2>
-<p>Fungua account ili kutumia GEMiN M1 Signal Bot</p>
-<p><b>TSh 20,000 / Siku 14</b></p>
-
-<div style="background:#111827;padding:10px;border-radius:10px;margin:10px 0;">
-<p>💳 Payment via Bank Transfer:</p>
-<p><b>🏦 Bank Transfer</b></p>
-<p>Bank: <b>Stanbic Bank</b></p>
-<p>Account Number: <b>9120003265771</b></p>
-<p style="font-size:13px;color:#aaa;">
-After payment, your account will be activated and you can use GEMiN M1 Signal Bot.
-</p>
-
-<input id="transaction_id" placeholder="Transaction ID" style="width:100%;padding:10px;margin:5px;">
-
-<input id="payer_name" placeholder="Jina la mtumaji wa malipo" style="width:100%;padding:10px;margin:5px;">
-
-<button onclick="paymentSent()" style="background:#16a34a;">
-💰 Nimeshalipa - Omba Activation
-</button>
-</div>
-
-<input id="username" placeholder="Username" style="width:100%;padding:10px;margin:5px;">
-<input id="password" type="password" placeholder="Password" style="width:100%;padding:10px;margin:5px;">
-
-<button onclick="registerAccount()">Jisajili</button>
-<button onclick="loginAccount()">Ingia</button>
-
-<p id="login-msg"></p>
-
-<div id="user-info-box" style="display:none;background:#1f2937;padding:15px;border-radius:10px;margin-top:15px;">
-<h3>👤 GEMiN Account</h3>
-<p id="user-info"></p>
-</div>
-
-</div>
-
-
 <div id="dashboard-area">
 
 <div class="gemin-brand">
